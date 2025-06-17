@@ -14,7 +14,7 @@ Do-file version:    0.0.0.9000
 /*==================================================
 0: Program set up
 ==================================================*/
-program define cache, rclass properties(prefix)
+program define cacheit, rclass properties(prefix)
 	version 16.1
 
 	//========================================================
@@ -25,7 +25,7 @@ program define cache, rclass properties(prefix)
 		syntax [anything(name=subcmd)], [dir(string) project(string) *]
 
 		if ("`dir'" == "") {
-			qui cache_setdir
+			qui cacheit_setdir
 			local dir = "`r(dir)'"
 		}
 		if ("`project'" != "") {
@@ -33,7 +33,7 @@ program define cache, rclass properties(prefix)
 		}
 
 		//clean cache
-		cache_clean clean, dir("`dir'") 
+		cacheit_clean clean, dir("`dir'") 
 		exit
 	}
 	if regexm("`0'", "^list") {
@@ -43,7 +43,7 @@ program define cache, rclass properties(prefix)
 		syntax [anything(name=subcmd)], [dir(string) project(string) *]
 
 		if ("`dir'" == "") {
-			qui cache_setdir
+			qui cacheit_setdir
 			local dir = "`r(dir)'"
 		}
 		if ("`project'" != "") {
@@ -51,7 +51,7 @@ program define cache, rclass properties(prefix)
 		}
 
 		//clean cache
-		cache_list print, dir("`dir'") 
+		cacheit_list print, dir("`dir'") 
 		exit
 	}
 
@@ -68,13 +68,6 @@ program define cache, rclass properties(prefix)
 	}
 	local right `0'
 
-	// syntax update below from p. 262 of https://www.stata.com/manuals/p.pdf renders this obsolete
-	//if ("`left'" == "")  {
-	//	dis "{err: make sure you follow this syntax}:"
-	//	dis _n "{cmd: cache {it:[subcmd] [, options]}: command}"
-	//	error 197
-	//}
-
 	// Get command and properties
 	if (ustrregexm("`right'", "^([A-Za-z0-9_]+)(.*)")) {
 		local cmd =  ustrregexs(1)
@@ -86,7 +79,7 @@ program define cache, rclass properties(prefix)
 	//========================================================
 	// Syntax of left part
 	//========================================================
-	* Regular syntax parsing for cache
+	* Regular syntax parsing for cacheit
 	local 0 : copy local left
 	syntax [anything(name=subcmd)]   ///
 	[,                   	     /// 
@@ -139,7 +132,7 @@ program define cache, rclass properties(prefix)
 
 	// Set dir if not selected by user
 	if ("`dir'" == "") {
-		qui cache_setdir
+		qui cacheit_setdir
 		local dir = "`r(dir)'"
 	}
 	else {
@@ -166,7 +159,7 @@ program define cache, rclass properties(prefix)
 	//========================================================
 
 	// hash command --------------------------
-	cache_hash get,  cmd_call("`right'")
+	cacheit_hash get,  cmd_call("`right'")
 	local cmd_hash = "`r(chhash)'"
 	return local cmd_hash = "`cmd_hash'"
 
@@ -218,7 +211,7 @@ program define cache, rclass properties(prefix)
 	}
 
 	//  combine both parts --------------------------
-	cache_hash get,  cmd_call("`cmd_hash'`datasignature'") prefix("`prefix'")
+	cacheit_hash get,  cmd_call("`cmd_hash'`datasignature'") prefix("`prefix'")
 	local call_hash = "`r(chhash)'"
 	return local call_hash = "`call_hash'"
 
@@ -237,12 +230,6 @@ program define cache, rclass properties(prefix)
 	local files: dir "`dir'" files "`call_hash'*.dta*", respectcase
 	local loadfiles  = 0
 	local loadframes = 0
-	// reverse files so that e_ will load last
-	//local reverse
-    //foreach ff in `files' {
-	//	local reverse `ff' `reverse'
-	//}
-	//local files `reverse'
 
 	// Find graphs --------------------------
 	local gfiles: dir "`dir'" files "`call_hash'*.gph", respectcase
@@ -305,7 +292,7 @@ program define cache, rclass properties(prefix)
 				local loadframes = 1
 			}
 			else {
-				cache_parsefile `rfile_name'
+				cacheit_parsefile `rfile_name'
 			    * Save first letter (e, r, s), type (macro, matrix, scalar) and extra details
 				local first_letter = r(first_letter)
 				local type  	   = r(type)
@@ -387,7 +374,7 @@ program define cache, rclass properties(prefix)
 			foreach matrix of local ematrix {
 				cwf	`matrices_results'
 				if !inlist("`matrix'", "b", "V", "Cns") {
-					cache_ereturn e__`matrix', name(`matrix') type("matrix") `hidden' `elfn'
+					cacheit_ereturn e__`matrix', name(`matrix') type("matrix") `hidden' `elfn'
 				}
 			}
 			// Return rmatrices
@@ -414,7 +401,7 @@ program define cache, rclass properties(prefix)
 			if "`rfile_name'"==".dta" continue
 
 			// extract key file details
-			cache_parsefile `rfile_name'
+			cacheit_parsefile `rfile_name'
 			* Save first letter (e, r, s), type (macro, matrix, scalar) and extra details
 			local first_letter = r(first_letter)
 			local type  	   = r(type)
@@ -447,7 +434,7 @@ program define cache, rclass properties(prefix)
 							}
 							else return local `item' `"`contents'"'
 						}
-						else cache_`treturn' "`contents'", name(`item') type("local") `hidden' `elfn'
+						else cacheit_`treturn' "`contents'", name(`item') type("local") `hidden' `elfn'
 					}
 					else if "`type'"=="scalars" {
 						if "`first_letter'"=="r" {
@@ -461,7 +448,7 @@ program define cache, rclass properties(prefix)
 							}
 							else return scalar `item' = `contents'
 						}
-						else cache_`treturn' `contents', name(`item') type("scalar") `hidden' `elfn'
+						else cacheit_`treturn' `contents', name(`item') type("scalar") `hidden' `elfn'
 					}
 				}
 			}
@@ -495,7 +482,7 @@ program define cache, rclass properties(prefix)
 
 
 	//========================================================
-	// If cache is not found 
+	// If cacheit is not found 
 	//========================================================
 	// Save baseline frames before running command & datasignature of each
 	dis "{result: Note:}{text: Command is not cached. Implementing cache for future.}"
@@ -690,7 +677,7 @@ program define cache, rclass properties(prefix)
 	}
 	qui log close `logfile'
 	if `newhide'==1 {
-		cache_cleanlog, folder("`dir'") fname("`call_hash'")
+		cacheit_cleanlog, folder("`dir'") fname("`call_hash'")
 	}
 
 	//========================================================
@@ -828,8 +815,8 @@ end
 
 
 // set directory
-cap program drop cache_setdir
-program define cache_setdir, rclass
+cap program drop cacheit_setdir
+program define cacheit_setdir, rclass
 	mata {
 			// Check if global macro exiss. If it does, 
 			// use it as cachedir. Otherwise, use pwd()
@@ -852,8 +839,8 @@ program define cache_setdir, rclass
 end
 
 // Clean log
-cap program drop cache_cleanlog
-program define cache_cleanlog, rclass
+cap program drop cacheit_cleanlog
+program define cacheit_cleanlog, rclass
 	syntax [anything], folder(string) fname(string)
 
 	file open writelog using "`folder'/mostrecentcache.smcl", write text replace
@@ -869,8 +856,8 @@ program define cache_cleanlog, rclass
 end
 
 // Unpack saved file name like e_scalars, or r_matrix_PT
-cap program drop cache_parsefile
-program define cache_parsefile, rclass
+cap program drop cacheit_parsefile
+program define cacheit_parsefile, rclass
 	syntax anything(name=fn)
 
 	* Extract the first letter (e, r, s)
@@ -887,8 +874,8 @@ program define cache_parsefile, rclass
 end
 
 // ereturn program
-cap program drop cache_ereturn
-program define cache_ereturn, eclass
+cap program drop cacheit_ereturn
+program define cacheit_ereturn, eclass
 	syntax anything(name=element), name(string) type(string) [hidden elframe(string)]
 	if "`hidden'"!="" {
 		frame `elframe' {
@@ -903,15 +890,15 @@ program define cache_ereturn, eclass
 end
 
 // sreturn program
-cap program drop cache_sreturn
-program define cache_sreturn, sclass
+cap program drop cacheit_sreturn
+program define cacheit_sreturn, sclass
 	syntax anything(name=element), name(string) type(string) [hidden elframe(string)]
 	sreturn `type' `name'=`element'
 end
 
 // return program
-cap program drop cache_return
-program define cache_return, rclass
+cap program drop cacheit_return
+program define cacheit_return, rclass
 	syntax anything(name=element), name(string) type(string)
 
 	frame elements {
@@ -930,7 +917,6 @@ exit
 ><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><
 
 Notes:
-1. Update log to remove the return if hidden specified 
 
 Version Control:
 

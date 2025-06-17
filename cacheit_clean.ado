@@ -16,7 +16,7 @@ Output:
 /*==================================================
               0: Program set up
 ==================================================*/
-program define cache_clean, rclass
+program define cacheit_clean, rclass
 
     syntax [anything(name=subcmd)] ///
     [,                   	       /// 
@@ -46,7 +46,7 @@ program define cache_clean, rclass
         display in yellow "Do you want to continue? (y/n): " _request(dcheck)
 
         //Clean if indicated
-        if "$dcheck"=="y" cache_cleanup, dir(`dir')
+        if "$dcheck"=="y" cacheit_cleanup, dir(`dir')
         else display "y not indicated.  Operation cancelled."
 
         //Exit
@@ -58,7 +58,7 @@ program define cache_clean, rclass
 end
 
 //------------ Get Hash based on string 
-program define cache_cleanup, rclass
+program define cacheit_cleanup, rclass
 	syntax [anything(name=subcmd)], [   ///
 	dir(string)                         ///
 	]
@@ -86,13 +86,7 @@ program define dirlist
    foreach f of local flist {
       rm "`fromdir'/`f'"
    }
-
-   // recursively list directories in "`fromdir'"
-   // local dlist: dir "`fromdir'" dirs "*"
-   // foreach d of local dlist {
-   //    dirlist , fromdir("`fromdir'/`d'") `list'
-   // }
-
+   
 end
 
 

@@ -1,0 +1,15 @@
+v 0.0.2
+d 'CACHEIT': Suite to Cache output of Stata commands
+d 
+d A program to cache all other Stata commands
+d 
+d Distribution-Date:   20250529
+d License: MIT
+d 
+F cacheit.ado
+F cacheit.sthlp
+F cacheit_clean.ado
+F cacheit_examples.ado
+F cacheit_hash.ado
+F cacheit_list.ado
+F cacheit_utils.ado

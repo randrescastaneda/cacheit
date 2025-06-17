@@ -16,7 +16,7 @@ Output:
 /*==================================================
               0: Program set up
 ==================================================*/
-program define cache_list, rclass
+program define cacheit_list, rclass
 
     syntax [anything(name=subcmd)] ///
     [,                   	       /// 
@@ -26,7 +26,7 @@ program define cache_list, rclass
     version 16.1
 
     /*==================================================
-        1: clean up cache contents leaving machine clean
+        1: Print out cached commands
     ==================================================*/
     if ("`subcmd'" == "print")  {
         //Check directory exists

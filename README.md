@@ -1,10 +1,10 @@
-# cache &ndash; A Stata package to cache results of other commands
+# cacheit &ndash; A Stata package to cache results of other commands
 
-**cache** is a Stata program which allows for the full output and returned elements of commands to be saved (cached), and reloaded in the future without re-running the command. When cache is used, it will check if a command has previously been cached by the user, and if so reload all elements returned by the command, along with command output, without re-running the command itself.  Otherwise, if no previously cached result for the command exists, **cache** will run the command, and ceche all output and returns for future uses.  
+**cacheit** is a Stata program which allows for the full output and returned elements of commands to be saved (cached), and reloaded in the future without re-running the command. When cacheit is used, it will check if a command has previously been cached by the user, and if so reload all elements returned by the command, along with command output, without re-running the command itself.  Otherwise, if no previously cached result for the command exists, **cacheit** will run the command, and cache all output and returns for future uses.  
 
-**cache** is useful if slow or resource intensive commands are run more than once, as after the first time they are run all output can be simply accessed from the previously saved version, saving on all processing time.  **cache** works with all valid Stata commands and is issued as a prefix before the desired command.
+**cacheit** is useful if slow or resource intensive commands are run more than once, as after the first time they are run all output can be simply accessed from the previously saved version, saving on all processing time.  **cacheit** works with all valid Stata commands and is issued as a prefix before the desired command.
 
-**cache** stores for future loading all elements returned or otherwise altered by the command including (where relevant):
+**cacheit** stores for future loading all elements returned or otherwise altered by the command including (where relevant):
 
 + All elements of the ereturn, sreturn, or return list including functions
 + Graphical output
@@ -15,7 +15,7 @@ For examples, refer to the Example section below.
 
 ## Syntax
 ```s
-cache [subcommand, options] : anycommand 
+cacheit [subcommand, options] : anycommand 
 ```
 
 where optional sub-commands are:
@@ -28,22 +28,22 @@ and options are:
 + dir(string): Specifies the directory where cached contents of commands will be saved to be restored later.  If not specified, a subdirectory of the current working directory named `_cache` is used by default.
 + project(string):  Allows for sub-folders within the cache directory if further control of cached contents is desired.
 + prefix(string): By default, all cached contents of a command will be saved with a prefix of `_ch` followed by the hash of the command as typed, along with the data signature of data in memory.  The prefix option will replace `_ch` with the indicated string
-+ nodata: If `nodata` is specified, cache will save all command returns, but will not save data if any changes in data are detected.  
++ nodata: If `nodata` is specified, cacheit will save all command returns, but will not save data if any changes in data are detected.  
 + datacheck(string): Allows for data on disk to be checked to ensure command uniqueness.
 + framecheck(string): Allows for additional frames to be checked to ensure command uniqueness.
 + clear: Allows command implementation to proceed even if this would unsaved changes in data (similar, for example, to `use, clear`)
 + hidden: Instead of returning hidden elements as visible stored results re-hides any hidden elements.
-+ replace: Forces cache to re-run the command and re-cache results, even if a previously cached version of command output has been found.  Such an example may be useful if commands are re-issued and command behaviour has changed.
-+ keepall: Indicates that elements stored by previous commands in e(return) and s(return) lists should not be cleared prior to invoking the command requested with cache, allowing for their future use.
++ replace: Forces cacheit to re-run the command and re-cache results, even if a previously cached version of command output has been found.  Such an example may be useful if commands are re-issued and command behaviour has changed.
++ keepall: Indicates that elements stored by previous commands in e(return) and s(return) lists should not be cleared prior to invoking the command requested with cacheit, allowing for their future use.
 
 
 
 ## Examples
 ### A Basic Example 
-As a first example, consider a regression using Stata's auto dataset.  Provided this has not previously been cached, **cache** will run the command as normal, with elements saved into the ereturn, return and sreturn lists:
+As a first example, consider a regression using Stata's auto dataset.  Provided this has not previously been cached, **cacheit** will run the command as normal, with elements saved into the ereturn, return and sreturn lists:
 
 ```s
-cache: reg price weight length
+cacheit: reg price weight length
 Command is not cached.  Implementing and caching for future.
 
       Source |       SS           df       MS      Number of obs   =        74
@@ -116,7 +116,7 @@ macros:
 
 ```
 
-Now imagine that some other commands are run (eg `sum price` below), such that elements in the return lists have changed, and you wish to re-gain access to these previous elements returned from the regression command.  Rather than re-running the regression, you can simply call **cache** once again, and it will recover all previously returned elements rather than re-running the command:
+Now imagine that some other commands are run (eg `sum price` below), such that elements in the return lists have changed, and you wish to re-gain access to these previous elements returned from the regression command.  Rather than re-running the regression, you can simply call **cacheit** once again, and it will recover all previously returned elements rather than re-running the command:
 
 ```s
 sum price
@@ -137,7 +137,7 @@ scalars:
                 r(max) =  15906
                 r(sum) =  456229
 
-cache: reg price weight length
+cacheit: reg price weight length
 Command was cached.  Recovering previous output.
 
       Source |       SS           df       MS      Number of obs   =        74
@@ -213,7 +213,7 @@ functions:
 Note that command output is also echoed to the terminal which is loaded from a previous log.
 
 ### An Example with Time Tests
-As a second example, and to see the benefits of **cache**, consider a command which may take considerable time to run, such as a bootstrap procedure.  While the first time it is cached the command will need to run, in future calls it will run essentiall instantaneously:
+As a second example, and to see the benefits of **cacheit**, consider a command which may take considerable time to run, such as a bootstrap procedure.  While the first time it is cached the command will need to run, in future calls it will run essentiall instantaneously:
 
 ```s
 sysuse auto
@@ -221,7 +221,7 @@ sysuse auto
 
 timer on 1
 
-cache: bootstrap, reps(5000) dots(100): reg price mpg
+cacheit: bootstrap, reps(5000) dots(100): reg price mpg
 Command is not cached.  Implementing and caching for future.
 (running regress on estimation sample)
 
@@ -247,7 +247,7 @@ timer off 1
 
 timer on 2
 
-cache: bootstrap, reps(5000) dots(100): reg price mpg
+cacheit: bootstrap, reps(5000) dots(100): reg price mpg
 Command was cached.  Recovering previous output.
 (running regress on estimation sample)
 
@@ -283,7 +283,7 @@ webuse set www.damianclarke.net/stata/
 
 webuse prop99_example.dta, clear
 
-cache: sdid packspercapita state year treated, vce(placebo) seed(1213) graph g1on
+cacheit: sdid packspercapita state year treated, vce(placebo) seed(1213) graph g1on
 Command is not cached.  Implementing and caching for future.
 Placebo replications (50). This may take some time.
 ----+--- 1 ---+--- 2 ---+--- 3 ---+--- 4 ---+--- 5
@@ -303,12 +303,12 @@ Refer to Arkhangelsky et al., (2021) for theoretical derivations.
 graph dir
     g1_1989  g2_1989
 ```
-Now, we will drop graphs, and re-run with **cache** and confirm that the command is printed from **cache** and graphs have been re-loaded in memory (and re-displayed in interactive versions of Stata).
+Now, we will drop graphs, and re-run with **cacheit** and confirm that the command is printed from **cacheit** and graphs have been re-loaded in memory (and re-displayed in interactive versions of Stata).
 
 ```s
 graph drop _all
 
-cache: sdid packspercapita state year treated, vce(placebo) seed(1213) graph g1on
+cacheit: sdid packspercapita state year treated, vce(placebo) seed(1213) graph g1on
 Command was cached.  Recovering previous output.
 Placebo replications (50). This may take some time.
 ----+--- 1 ---+--- 2 ---+--- 3 ---+--- 4 ---+--- 5
@@ -329,11 +329,11 @@ graph dir
     g1_1989  g2_1989
 ```
 
-### Use of cache sub-commands
-Based on the above commands, we can examine sub-commands within cache.  Below we use `cache list` which provides a list of all currently cached commands.
+### Use of cacheit sub-commands
+Based on the above commands, we can examine sub-commands within cacheit.  Below we use `cacheit list` which provides a list of all currently cached commands.
 
 ```{s}
-. cache list
+. cacheit list
 Cached commands: 
 reg price weight length
 
@@ -344,14 +344,14 @@ bootstrap, reps(5000) dots(100): reg price mpg
 sdid packspercapita state year treated, vce(placebo) seed(1213) graph g1on
 ```
 
-We can also use `cache clean` to remove all cached commands and related saved elements, and confirm that no commands are stored in the cache:
+We can also use `cacheit clean` to remove all cached commands and related saved elements, and confirm that no commands are stored in the cache:
 
 ```{s}
-. cache clean
+. cacheit clean
 Warning: This will delete all files within ~/home/_cache
 Do you want to continue? (y/n): . y
 
-. cache list
+. cacheit list
 Cached commands: 
 ```
 
@@ -361,17 +361,17 @@ Standard cache behaviour can also be controlled by using a number of global vari
 | Global name | Value | Description |
 | ----------- | ----- | ----------- |
 |cache_replace | replace| Automatically activates the replace option, overwriting the cache each time.|
-|cache_on      | off   | Bypasses caching entirely (effectively ignoring the _cache:_ prefix if present). |
+|cache_on      | off   | Bypasses caching entirely (effectively ignoring the _cacheit:_ prefix if present). |
 |cache_prefix  | string | Define a prefix for saving cached contents, overriding the default *_ch* used in the prefix option with any *string* defined by the user. |
 |cache_dir | dir_name | Define a default location for saving cached contents, overriding the default  *_cache* directory with any *dir_name* defined by the user. |
 | cache_project | dir_name | Define a default location within the cache directory to store cached output with any *dir_name* |
 
-This allows for permanent control of cache for the entire duration a global is set.
-If such global control is detected by cache, a note will be provided to users warning that global
+This allows for permanent control of cacheit for the entire duration a global is set.
+If such global control is detected by cacheit, a note will be provided to users warning that global
 control is detected.  Note that if both global control is set *and* a command option is set,
 the command option will be take primacy.  For example, if the cache_project global is set to 
 *my_sub_project*, all cached commands will be stored in a directory named in this fashion. 
-However if a specific call to cache then also indicates *project(my_main_project)*, this 
+However if a specific call to cacheit then also indicates *project(my_main_project)*, this 
 specific cached command will be placed in the my_main_project directory.
 
 

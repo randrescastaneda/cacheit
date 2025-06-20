@@ -946,3 +946,10 @@ Version Control:
 *! -- prepare for SSC submission
 *! version 0.0.2  <2025may29>
 *! -- Introduce global control variables
+*! ############# END of development of {cache} #########################################
+*! --------------------------------------------------------
+*! ############# START of development of {cacheit} #####################################
+*! version 0.0.3  <2025jun20>
+*! -- `cache` has changed to `cacheit` 
+*! --    New repo --> https://github.com/randrescastaneda/cacheit
+*! --    Old repo --> still available--but archived--in https://github.com/randrescastaneda/cache

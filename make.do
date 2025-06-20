@@ -22,7 +22,7 @@ return local files = "`as'"
 end
 
 if ("`c(username)'" == "wb384996") {
-    cd "C:\Users\wb384996\OneDrive - WBG\ado\myados\cache"
+    cd "C:\Users\wb384996\OneDrive - WBG\ado\myados\cacheit"
 }
 else {
     // Damian, add your path here.. 
@@ -49,8 +49,8 @@ local toins  "`as';`hs';`ms';`ds';`dtas'"
 disp "`toins'"
 
 
-make cache, replace toc pkg                                  ///  readme
-	version(0.0.2)                                   ///
+make cacheit, replace toc pkg                                  ///  readme
+	version(0.0.3)                                   ///
     license("MIT")                                         ///
    author(`""R.Andres Castaneda" "Damian Clarke""')                       ///
     affiliation(`" "The World Bank" "University of Chile & University of Exeter""')                                                         ///

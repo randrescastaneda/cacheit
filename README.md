@@ -29,7 +29,7 @@ We recommend installing the [github](https://github.com/haghish/github) Stata co
 
 ```s
 net install github, from("https://haghish.github.io/github/")
-github install andrescastaneda/cacheit
+github install randrescastaneda/cacheit
 ```
 
 ## Syntax

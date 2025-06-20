@@ -13,6 +13,25 @@
 
 For examples, refer to the Example section below.
 
+## Installation
+
+### From SSC
+
+You may find the stable, though slightly older, version of **cacheit** on SSC. 
+```s
+ssc install cacheit
+```
+
+### From GitHub 
+
+You may find the latest version of **cacheit** on GitHub, which is updated more frequently than the SSC version.  The GitHub version may contain new features and bug fixes not yet available on SSC. 
+We recommend installing the [github](https://github.com/haghish/github) Stata command by [E. F. Haghish](https://github.com/haghish)
+
+```s
+net install github, from("https://haghish.github.io/github/")
+github install andrescastaneda/cacheit
+```
+
 ## Syntax
 ```s
 cacheit [subcommand, options] : anycommand 

@@ -11,6 +11,11 @@ Modification Date:  12 Dec 2024 - 02:06:41
 Do-file version:    0.0.0.9000
 ==================================================*/
 
+*CHANGES NEEDED:
+* check datasignature thing
+* timer
+
+
 /*==================================================
 0: Program set up
 ==================================================*/
@@ -22,10 +27,11 @@ program define cacheit, rclass properties(prefix)
 	//========================================================
 	if regexm("`0'", "^clean") {
 		// Unpack locations for cleaning
-		syntax [anything(name=subcmd)], [dir(string) project(string) *]
+		syntax [anything(name=subcmd)], [dir(string) project(string) hidden_dir hidden]
 
 		if ("`dir'" == "") {
-			qui cacheit_setdir
+			if ("`hidden_dir'" != "" | "`hidden'" != "") qui cacheit_setdir, hidden_dir
+			else                                              qui cacheit_setdir
 			local dir = "`r(dir)'"
 		}
 		if ("`project'" != "") {
@@ -40,10 +46,11 @@ program define cacheit, rclass properties(prefix)
 		//"listing cache"
 		
 		// Unpack locations for list file
-		syntax [anything(name=subcmd)], [dir(string) project(string) *]
+		syntax [anything(name=subcmd)], [dir(string) project(string) hidden_dir hidden]
 
 		if ("`dir'" == "") {
-			qui cacheit_setdir
+			if ("`hidden_dir'" != "" | "`hidden'" != "") qui cacheit_setdir, hidden_dir
+			else                                              qui cacheit_setdir
 			local dir = "`r(dir)'"
 		}
 		if ("`project'" != "") {
@@ -86,15 +93,19 @@ program define cacheit, rclass properties(prefix)
 		dir(string)              ///  
 		project(string)          ///  
 		prefix(string)           /// 
+		external_api(string)     /// 
 		noDATA                   /// 
 		datacheck(string)        ///  
 		framecheck(string)       /// 
+		rngcache                 ///
+	    seed(numlist integer >0 max=1)	///
 		pause                    ///
 		KEEPall                  ///  does not clear previous returns  
+		hidden_dir               ///  works with .cache directory
 		hidden                   ///  keeps hidden returns hidden
 		clear                    ///  
 		replace                  ///  replace says to re-run even if the cache is there
-	] 
+	]
 
 	//========================================================
 	//  Permitting global control
@@ -102,6 +113,10 @@ program define cacheit, rclass properties(prefix)
 	if ("${cache_replace}" == "replace" & "`replace'" == "") {
 		dis "{result: Note:}{text: cache is set to replace previously cached files via the {res:{it:cache_replace}} global.}"
 		local replace replace
+	}
+	if ("${cache_keepall}" == "keepall" & "`keepall'" == "") {
+		dis "{result: Note:}{text: cache is set to keep all return lists in memory, setting keepall by default.}"
+		local keepall keepall
 	}
 	if ("${cache_on}"=="off") {
 		dis "{result: Note:}{text: cache is bypassed given that global {res:{it:cache_on}} is set to {res:{ul:off}}.}"
@@ -124,6 +139,10 @@ program define cacheit, rclass properties(prefix)
 	//========================================================
 	// Set up and defenses
 	//========================================================
+	if `"`seed'"' != "" {
+		set seed `seed'
+	}
+	local rstate = c(rngstate)
 
 	* pause
 	if ("`pause'" == "pause") pause on
@@ -132,7 +151,8 @@ program define cacheit, rclass properties(prefix)
 
 	// Set dir if not selected by user
 	if ("`dir'" == "") {
-		qui cacheit_setdir
+		if ("`hidden_dir'" != "") qui cacheit_setdir, hidden_dir
+		else                      qui cacheit_setdir
 		local dir = "`r(dir)'"
 	}
 	else {
@@ -211,10 +231,17 @@ program define cacheit, rclass properties(prefix)
 	}
 
 	//  combine both parts --------------------------
-	cacheit_hash get,  cmd_call("`cmd_hash'`datasignature'") prefix("`prefix'")
-	local call_hash = "`r(chhash)'"
-	return local call_hash = "`call_hash'"
-
+	if ("`rngcache'" != "") {
+		// get seed and state
+		cacheit_hash get,  cmd_call("`rstate'`cmd_hash'`datasignature'`external_api'") prefix("`prefix'")
+		local call_hash = "`r(chhash)'"
+		return local call_hash = "`call_hash'"
+	}
+	else {
+		cacheit_hash get,  cmd_call("`cmd_hash'`datasignature'`external_api'") prefix("`prefix'")
+		local call_hash = "`r(chhash)'"
+		return local call_hash = "`call_hash'"
+	}
 	//========================================================
 	// Find cache files and load
 	//========================================================
@@ -519,6 +546,17 @@ program define cacheit, rclass properties(prefix)
 	if "`keepall'"=="" ereturn clear
 	if "`keepall'"=="" sreturn clear
 
+	// Get timer for command time
+	qui timer list  
+	local timeroff = 1
+	forvalues i =  1/100  {
+    	if mi(scalar(r(nt`i'))) {
+			local timernum = `i'
+			local timeoff = 0
+        	continue , break
+	    }
+	}
+
 	//Log output and then this can be printed when cached command called
 	tempname logfile
 	qui log using "`dir'/`call_hash'", name(`logfile') replace
@@ -532,7 +570,9 @@ program define cacheit, rclass properties(prefix)
 	// Will log for return list, ereturn list and sreturn list to check for hidden returns
 	if "`hidden'"!="" qui log using "`dir'/rlist.txt", name(rlog) text replace
 	* Now, run the command on the right
+	qui: timer on `timernum'
 	capture noisily `right'
+	qui timer off `timernum'
 	if "`hidden'"!="" {
 		dis ""
 		dis "The following elements will be returned as visible"
@@ -552,7 +592,8 @@ program define cacheit, rclass properties(prefix)
 		qui log close `logfile'	
 		exit
 	}
-
+	qui timer list
+	local commandtime = r(t`timernum')
 	local dtasave   = 0
 
 	// ret list --------------
@@ -817,14 +858,22 @@ end
 // set directory
 cap program drop cacheit_setdir
 program define cacheit_setdir, rclass
+	syntax [, hidden_dir]
+	
+	local subdir "_cache"
+	if ("`hidden_dir'" != "") local subdir ".cache"
+
 	mata {
-			// Check if global macro exiss. If it does, 
+			// Pick cache directory name based on presence of hidden option
+			subdir = st_local("subdir")
+
+			// Check if global macro exists. If it does, 
 			// use it as cachedir. Otherwise, use pwd()
 			if (st_global("cache_dir") != "") {
-				cachedir = st_global("cache_dir") + "/_cache"
+				cachedir = st_global("cache_dir") + "/" + subdir
 			}
 			else {
-				cachedir = pwd() + "_cache"
+				cachedir = pwd() + subdir
 			}
 			if (!direxists(cachedir)) {
 				mkdir(cachedir)

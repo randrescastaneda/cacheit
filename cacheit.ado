@@ -29,9 +29,13 @@ program define cacheit, rclass properties(prefix)
 		// Unpack locations for cleaning
 		syntax [anything(name=subcmd)], [dir(string) project(string) hidden_dir hidden]
 
+		// If hidden_dir is set, override dir to use .cache in current working directory
+		if ("`hidden_dir'" != "" | "`hidden'" != "") {
+			local dir ".cache"
+		}
+
 		if ("`dir'" == "") {
-			if ("`hidden_dir'" != "" | "`hidden'" != "") qui cacheit_setdir, hidden_dir
-			else                                              qui cacheit_setdir
+			qui cacheit_setdir
 			local dir = "`r(dir)'"
 		}
 		if ("`project'" != "") {
@@ -48,9 +52,13 @@ program define cacheit, rclass properties(prefix)
 		// Unpack locations for list file
 		syntax [anything(name=subcmd)], [dir(string) project(string) hidden_dir hidden]
 
+		// If hidden_dir is set, override dir to use .cache in current working directory
+		if ("`hidden_dir'" != "" | "`hidden'" != "") {
+			local dir ".cache"
+		}
+
 		if ("`dir'" == "") {
-			if ("`hidden_dir'" != "" | "`hidden'" != "") qui cacheit_setdir, hidden_dir
-			else                                              qui cacheit_setdir
+			qui cacheit_setdir
 			local dir = "`r(dir)'"
 		}
 		if ("`project'" != "") {
@@ -149,10 +157,14 @@ program define cacheit, rclass properties(prefix)
 	else                      pause off
 	set checksum off
 
+	// If hidden_dir is set, override dir to use .cache in current working directory
+	if ("`hidden_dir'" != "") {
+		local dir ".cache"
+	}
+
 	// Set dir if not selected by user
 	if ("`dir'" == "") {
-		if ("`hidden_dir'" != "") qui cacheit_setdir, hidden_dir
-		else                      qui cacheit_setdir
+		qui cacheit_setdir
 		local dir = "`r(dir)'"
 	}
 	else {
@@ -179,7 +191,7 @@ program define cacheit, rclass properties(prefix)
 	//========================================================
 
 	// hash command --------------------------
-	cacheit_hash get,  cmd_call("`right'")
+	cacheit_hash get,  cmd_call(`"`right'"')
 	local cmd_hash = "`r(chhash)'"
 	return local cmd_hash = "`cmd_hash'"
 
@@ -281,7 +293,7 @@ program define cacheit, rclass properties(prefix)
 		qui count
 		local rnmax=r(N)
 		local matchedCommand = contents[`rnmax']
-		if "`matchedCommand'" != "`right'" {
+		if ustrcompare(`"`matchedCommand'"', `"`right'"') != 0 {
 			dis "{err: Hash collision detected.}"
 			dis "{err: This is a very rare occurrence in which an identical hash has coincidentally been generated for two distinct strings.}"
 			dis "{err: You typed `matchedCommand'.}"
@@ -563,7 +575,7 @@ program define cacheit, rclass properties(prefix)
 
 	//Write current command to cache log for future reference if consulted
 	qui file open cachedcommands using "`dir'/cached_commands.txt", write append
-	file write cachedcommands _n `". {cmd:`right'}"'  _n
+	file write cachedcommands _n `". {cmd:	`right'}"'  _n
  	file close cachedcommands 
 
 
@@ -703,12 +715,12 @@ program define cacheit, rclass properties(prefix)
 		local rn1 = r(N)+1
 		qui set obs `rn1'
 		qui replace item = "cached_command" in `rn1'
-		qui replace contents = "`right'" in `rn1'
+		qui replace contents = `"`right'"' in `rn1'
 	}
 	else {
 		qui set obs 1
 		qui gen item = "cached_command"
-		qui gen contents = "`right'"
+		qui gen contents = `"`right'"'
 	}
 	qui save "`dir'/`call_hash'_r_macros.dta", replace
 	cwf `origframe'
@@ -858,22 +870,14 @@ end
 // set directory
 cap program drop cacheit_setdir
 program define cacheit_setdir, rclass
-	syntax [, hidden_dir]
-	
-	local subdir "_cache"
-	if ("`hidden_dir'" != "") local subdir ".cache"
-
 	mata {
-			// Pick cache directory name based on presence of hidden option
-			subdir = st_local("subdir")
-
 			// Check if global macro exists. If it does, 
 			// use it as cachedir. Otherwise, use pwd()
 			if (st_global("cache_dir") != "") {
-				cachedir = st_global("cache_dir") + "/" + subdir
+				cachedir = st_global("cache_dir") + "/_cache"
 			}
 			else {
-				cachedir = pwd() + subdir
+				cachedir = pwd() + "_cache"
 			}
 			if (!direxists(cachedir)) {
 				mkdir(cachedir)

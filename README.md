@@ -54,7 +54,7 @@ and options are:
 + rngcache: By default, the random-number generator (RNG) state is ignored when constructing the cache key. Specify `rngcache` to include the current RNG state in the cache key, ensuring commands with randomness (bootstrap, simulate, random splits) produce distinct caches for different RNG states.
 + clear: Allows command implementation to proceed even if this would unsaved changes in data (similar, for example, to `use, clear`)
 + hidden: Instead of returning hidden elements as visible stored results re-hides any hidden elements. 
-+ hidden_dir: Use a hidden cache subdirectory named `.cache` instead of the default `_cache`.
++ hidden_dir: Use a hidden cache subdirectory named `.cache` in the current working directory, overriding any `dir()` option or `cache_dir` global setting.
 + replace: Forces cacheit to re-run the command and re-cache results, even if a previously cached version of command output has been found.  Such an example may be useful if commands are re-issued and command behaviour has changed.
 + keepall: Indicates that elements stored by previous commands in e(return) and s(return) lists should not be cleared prior to invoking the command requested with cacheit, allowing for their future use.
 

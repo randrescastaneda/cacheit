@@ -51,7 +51,7 @@
 {synopt :{opt rngcache}}Includes the random-number generator (RNG) state in the cache key{p_end}
 {synopt :{opt clear}}Allows command to proceed even if this saves over data currently in memory{p_end}
 {synopt :{opt hidden}}Does not return hidden elements as visible stored results{p_end}
-{synopt :{opt hidden_dir}}Use a hidden cache subdirectory named {.cache} instead of {_cache}{p_end}
+{synopt :{opt hidden_dir}}Use a hidden cache subdirectory named .cache instead of _cache{p_end}
 {synopt :{opt replace}}Re-runs command and saves over previously cached version{p_end}
 {synopt :{opt keep:all}}Does not clear previous ereturn and sreturn lists, permitting future use{p_end}
 {synoptline}
@@ -143,9 +143,8 @@ define the path in the global macro {opt cache_dir} within your
 subdirectory will be created inside the directory specified in global 
 {opt cache_dir}.
 
-{pmore} To use a hidden cache subdirectory instead, specify {opt hidden_dir}. This selects {.cache}
-as the subdirectory under the current working directory or under the base path provided by
-{opt dir()} or the {opt cache_dir} global, if set.
+{pmore} Note: If you use {opt hidden_dir}, it overrides both {opt dir()} and the {opt cache_dir} global,
+always using a {.cache} directory in the current working directory.
 
  
 {phang}
@@ -223,10 +222,9 @@ and
 under {it:Remarks and examples} of {bf:[P] return} for more information. 
 
 {phang}
-{opt hidden_dir} Generates a hidden cache directory named {.cache} instead of the default {_cache}.
-If {opt dir()} is provided or the {opt cache_dir} global is set, {opt hidden_dir} appends {.cache}
-under that base directory. When combined with {opt project()}, the project folder is created inside
-the selected cache subdirectory. 
+{opt hidden_dir} Generates a hidden cache directory named {.cache} in the current working directory,
+overriding any {opt dir()} option or {opt cache_dir} global setting. When combined with {opt project()},
+the project folder is created inside the {.cache} directory. 
 
 {phang}
 {opt replace} Forces {cmd:cacheit} to re-run the command and re-cache results, even if a 

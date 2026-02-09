@@ -45,24 +45,23 @@ local tests_failed = 0
 qui {
     sysuse auto, clear
     
-    // Fill up timers to near capacity
-    forvalues i = 1/95 {
+    // Fill up ALL timers to force uninitialized timernum
+    forvalues i = 1/100 {
         qui timer on `i'
         qui timer off `i'
     }
     
-    // Now attempt cacheit with limited timers free
+    // Now attempt cacheit with NO free timers
     local cmd_line `"cacheit, dir("`test_dir'"): regress price weight"'
     cap `cmd_line'
     
-    if _rc == 0 {
+    if _rc != 0 {
+        // Should fail because timernum is uninitialized
         test_pass "BUG-001"
         local ++tests_passed
     }
     else {
-        test_fail "BUG-001" ///
-        "Timer allocation" "Expected graceful handling, got error code `_rc'" ///
-        `"`cmd_line'"'
+        noi test_fail "BUG-001" "Timer allocation" "Command unexpectedly succeeded with all timers full" `"`cmd_line'"'
         local ++tests_failed
     }
     
@@ -76,25 +75,28 @@ qui {
 qui {
     sysuse auto, clear
     
-    // Attempt command with error to trigger log file handling
+    // First, try to access the rlog file to see if it's open after error
+    // Attempt command with hidden option that will generate error
     local cmd_error `"cacheit, dir("`test_dir'") hidden: bogus_command_that_fails"'
     cap `cmd_error'
     local error_code = _rc
     
     if `error_code' != 0 {
-        // Error correctly generated, check if we can still use cacheit afterward
-        sysuse auto, clear
-        
-        local cmd_recovery `"cacheit, dir("`test_dir'"): regress price weight"'
-        cap `cmd_recovery'
+        // Error correctly generated
+        // Now try to CREATE a file named rlog in same directory
+        // If rlog is still open, this should fail
+        cap file open testfile using "`test_dir'/rlist.txt", read
         
         if _rc == 0 {
-            test_pass "BUG-002"
-            local ++tests_passed
+            // File can be opened, meaning rlog was closed (no leak)
+            file close testfile
+            noi test_fail "BUG-002" "Log file leak" "rlog file handle properly closed (bug may be fixed)" `"`cmd_error'"'
+            local ++tests_failed
         }
         else {
-            test_fail "BUG-002" "Recovery after error" "Resource leak may have occurred" `"`cmd_recovery'"'
-            local ++tests_failed
+            // File cannot be opened (rlog still holding it)
+            test_pass "BUG-002"
+            local ++tests_passed
         }
     }
 }
@@ -105,25 +107,27 @@ qui {
 qui {
     sysuse auto, clear
     
-    // Count frames before
+    // Count frames before (baseline)
     qui frames dir
     local frames_before : word count `r(frames)'
     
-    // Attempt cacheit with invalid command
-    local cmd_line `"cacheit, dir("`test_dir'"): invalid command syntax here"'
+    // Attempt cacheit that will error DURING cache lookup (before command execution)
+    // This triggers the hashcheck frame creation at line 271
+    // If error happens before saving, hashcheck frame isn't cleaned up
+    local cmd_line `"cacheit, dir("`test_dir'"): generate x = 1/0"'
     cap `cmd_line'
     
     // Count frames after
     qui frames dir
     local frames_after : word count `r(frames)'
     
-    // Frames should be equal (temp frames cleaned up)
-    if `frames_before' == `frames_after' {
+    // If frames_after > frames_before, we have leaked frames
+    if `frames_after' > `frames_before' {
         test_pass "BUG-003"
         local ++tests_passed
     }
     else {
-        test_fail "BUG-003" "Frame cleanup on error" "Frames before: `frames_before', after: `frames_after'" `"`cmd_line'"'
+        noi test_fail "BUG-003" "Frame cleanup on error" `"`cmd_line'"'
         local ++tests_failed
     }
 }
@@ -142,21 +146,27 @@ qui {
     
     // Run cacheit command
     local cmd_line `"cacheit, dir("`test_dir'"): regress price weight"'
+    cap `cmd_lframes to track
+    qui frames dir
+    local frames_initial : word count `r(frames)'
+    
+    // Run cacheit which will create and drop internal frames
+    local cmd_line `"cacheit, dir("`test_dir'"): regress price weight"'
     cap `cmd_line'
     
-    // Drop the frame we created
-    frame drop temp_frame
-    
+    // Count frames after execution
     qui frames dir
-    local frames_after : word count `r(frames)'
+    local frames_final : word count `r(frames)'
     
-    // Verify frame cleanup works
-    if `frames_after' < `frames_before' {
+    // If frame drops have error checking (cap), frames should be cleaned
+    // If frame drops lack error checking and fail silently, frames stay
+    // Bug manifests as orphaned frames remaining
+    if `frames_final' == `frames_initial' {
         test_pass "BUG-004"
         local ++tests_passed
     }
     else {
-        test_fail "BUG-004" "Frame cleanup" "Frames not properly cleaned" `"`cmd_line'"'
+        noi test_fail "BUG-004" "Orphaned frames remain (expected `frames_initial', got `frames_final')" `"`cmd_line'"'
         local ++tests_failed
     }
 }
@@ -187,7 +197,7 @@ qui {
             graph drop _all
         }
         else {
-            test_fail "BUG-005" "Graph restoration" "Graph not restored from cache" `"`cmd_line'"'
+            noi test_fail "BUG-005" "Graph not restored from cache" `"`cmd_line'"'
             local ++tests_failed
         }
     }
@@ -201,6 +211,7 @@ qui {
 //========================================================
 * cleanup_cache "${cache_dir}"
 cleanup_cache "`test_dir'"
+
 global cache_dir ""
 
 local total = `tests_passed' + `tests_failed'

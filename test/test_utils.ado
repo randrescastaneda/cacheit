@@ -137,12 +137,10 @@ program define cleanup_cache
     args cache_dir
     
     // Check if directory exists
-    mata {
+    mata: st_local("direxists", strofreal(direxists("`cache_dir'")))
 
-        if (direxists("`cache_dir'")) {
-            stata(`"cap cacheit clean, dir("`cache_dir'")"')
-        }
-        
+    if ("`direxists'" == "1") {
+        noi cacheit clean, dir("`cache_dir'")
     }
 
 end

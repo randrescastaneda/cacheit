@@ -18,14 +18,13 @@ USAGE:
 
 version 16.1
 clear all
+discard // very important for changes in the cacheit package
 set more off
+
+disp _newline "{title:CACHEIT TEST SUITE RUNNER}" _newline
 
 // Parse arguments
 local test_suites "bugs core advanced"
-
-disp _newline "{title:╔════════════════════════════════════════════════════════╗}"
-disp "{title:║         CACHEIT COMPREHENSIVE TEST SUITE RUNNER           ║}"
-disp "{title:╚════════════════════════════════════════════════════════╝}" _newline
 
 // Setup paths
 local test_root = c(sysdir_ado) + "/../../../ado/myados/cacheit/test"
@@ -37,28 +36,12 @@ if _rc != 0 {
     exit 1
 }
 
-// Initialize results tracking
-local total_passed = 0
-local total_failed = 0
-local total_skipped = 0
-
-local test_results ""
-
 //========================================================
 // RUN BUG-SPECIFIC TESTS
 //========================================================
 if strpos("`test_suites'", "bugs") > 0 {
-    disp "{title:Running BUG-SPECIFIC TESTS...}" _newline
-    
     cap {
         do unit/test_units_bugs.do
-    }
-    
-    if _rc == 0 {
-        disp "{result:✓ Bug tests completed successfully}" _newline
-    }
-    else {
-        disp "{err:✗ Bug tests encountered errors (code: `_rc')}" _newline
     }
 }
 
@@ -66,17 +49,8 @@ if strpos("`test_suites'", "bugs") > 0 {
 // RUN CORE FUNCTIONALITY TESTS
 //========================================================
 if strpos("`test_suites'", "core") > 0 {
-    disp "{title:Running CORE FUNCTIONALITY TESTS...}" _newline
-    
     cap {
         do unit/test_units_core.do
-    }
-    
-    if _rc == 0 {
-        disp "{result:✓ Core tests completed successfully}" _newline
-    }
-    else {
-        disp "{err:✗ Core tests encountered errors (code: `_rc')}" _newline
     }
 }
 
@@ -84,31 +58,12 @@ if strpos("`test_suites'", "core") > 0 {
 // RUN ADVANCED FEATURE TESTS
 //========================================================
 if strpos("`test_suites'", "advanced") > 0 {
-    disp "{title:Running ADVANCED FEATURE TESTS...}" _newline
-    
     cap {
         do unit/test_units_advanced.do
     }
-    
-    if _rc == 0 {
-        disp "{result:✓ Advanced tests completed successfully}" _newline
-    }
-    else {
-        disp "{err:✗ Advanced tests encountered errors (code: `_rc')}" _newline
-    }
 }
 
-//========================================================
-// GENERATE FINAL REPORT
-//========================================================
-disp _newline "{title:╔════════════════════════════════════════════════════════╗}"
-disp "{title:║                    FINAL TEST REPORT                      ║}"
-disp "{title:╚════════════════════════════════════════════════════════╝}" _newline
-
-disp "{text:Test Suites Run: `test_suites'}"
-disp "{text:Date: `c(current_date)' `c(current_time)'}" _newline
-
-disp "{result:For detailed results, review individual test output above.}" _newline
+disp _newline "{result:Tests completed." _newline
 
 exit
 /* End of test runner */

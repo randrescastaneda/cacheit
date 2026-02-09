@@ -1,5 +1,9 @@
 # cacheit Test Suite
 
+## Quick Start
+
+👉 **New to the test suite?** Start with [QUICKSTART.md](./QUICKSTART.md) for a 30-second overview.
+
 ## Overview
 
 This directory contains comprehensive unit and integration tests for the `cacheit` Stata package. The test suite is organized to:
@@ -13,15 +17,27 @@ This directory contains comprehensive unit and integration tests for the `cachei
 
 ```
 test/
+├── QUICKSTART.md                # START HERE: 30-second quick start
+├── README.md                    # This file (complete documentation)
+├── TEST_MAPPING.md              # Technical reference: bug-to-test mapping
 ├── run_tests.do                 # Master test runner
 ├── test_utils.ado               # Test utilities and assertions
 ├── unit/
-│   ├── test_units_bugs.do       # Bug-specific tests
-│   ├── test_units_core.do       # Core functionality tests
-│   └── test_units_advanced.do   # Advanced feature tests
+│   ├── test_units_bugs.do       # Bug-specific tests (5 tests)
+│   ├── test_units_core.do       # Core functionality tests (10 tests)
+│   └── test_units_advanced.do   # Advanced feature tests (10 tests)
 └── integration/
     └── (planned for future)
 ```
+
+## Test Output
+
+Tests are **streamlined for clarity**:
+- ✓ Passing tests are **silent** (no output)
+- ✗ Failing tests show **error details**
+- Final **summary** shows total passed/failed
+
+This clean output makes it easy to spot problems at a glance.
 
 ## Test Categories
 

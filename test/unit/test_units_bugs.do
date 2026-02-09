@@ -24,14 +24,13 @@ version 16.1
 // Setup
 clear all
 set more off
+timer clear
 
 // Source test utilities
 run test_utils.ado
 
 // Setup test environment
 local test_dir = c(tmpdir) + `"cacheit_bug_tests_`=subinstr("`c(current_time)'", ":", "", .)'"'
-
-disp `"`test_dir'"'
 
 cap mkdir "`test_dir'"
 global cache_dir "`test_dir'"
@@ -53,14 +52,17 @@ qui {
     }
     
     // Now attempt cacheit with limited timers free
-    cap noisily cacheit, dir("`test_dir'"): regress price weight
+    local cmd_line `"cacheit, dir("`test_dir'"): regress price weight"'
+    cap `cmd_line'
     
     if _rc == 0 {
         test_pass "BUG-001"
         local ++tests_passed
     }
     else {
-        test_fail "BUG-001: Timer allocation" "Expected graceful handling, got error code `_rc'"
+        test_fail "BUG-001" ///
+        "Timer allocation" "Expected graceful handling, got error code `_rc'" ///
+        `"`cmd_line'"'
         local ++tests_failed
     }
     
@@ -74,24 +76,24 @@ qui {
 qui {
     sysuse auto, clear
     
-    // Attempt command with hidden option that will generate error
-    cap noisily cacheit, dir("`test_dir'") hidden: bogus_command_that_fails
+    // Attempt command with error to trigger log file handling
+    local cmd_error `"cacheit, dir("`test_dir'") hidden: bogus_command_that_fails"'
+    cap `cmd_error'
     local error_code = _rc
     
     if `error_code' != 0 {
-        // Error correctly generated
-        // Check if rlog files are left open (hard to verify directly)
-        // Instead, check that we can still use cacheit afterward
+        // Error correctly generated, check if we can still use cacheit afterward
         sysuse auto, clear
         
-        cap noisily cacheit, dir("`test_dir'"): regress price weight
+        local cmd_recovery `"cacheit, dir("`test_dir'"): regress price weight"'
+        cap `cmd_recovery'
         
         if _rc == 0 {
             test_pass "BUG-002"
             local ++tests_passed
         }
         else {
-            test_fail "BUG-002: Recovery after error" "Resource leak may have occurred"
+            test_fail "BUG-002" "Recovery after error" "Resource leak may have occurred" `"`cmd_recovery'"'
             local ++tests_failed
         }
     }
@@ -105,14 +107,15 @@ qui {
     
     // Count frames before
     qui frames dir
-    local frames_before = r(number)
+    local frames_before : word count `r(frames)'
     
     // Attempt cacheit with invalid command
-    cap noisily cacheit, dir("`test_dir'"): invalid command syntax here
+    local cmd_line `"cacheit, dir("`test_dir'"): invalid command syntax here"'
+    cap `cmd_line'
     
     // Count frames after
     qui frames dir
-    local frames_after = r(number)
+    local frames_after : word count `r(frames)'
     
     // Frames should be equal (temp frames cleaned up)
     if `frames_before' == `frames_after' {
@@ -120,7 +123,7 @@ qui {
         local ++tests_passed
     }
     else {
-        test_fail "BUG-003: Frame cleanup on error" "Frames before: `frames_before', after: `frames_after'"
+        test_fail "BUG-003" "Frame cleanup on error" "Frames before: `frames_before', after: `frames_after'" `"`cmd_line'"'
         local ++tests_failed
     }
 }
@@ -135,16 +138,17 @@ qui {
     frame create temp_frame
     
     qui frames dir
-    local frames_before = r(number)
+    local frames_before : word count `r(frames)'
     
     // Run cacheit command
-    cap noisily cacheit, dir("`test_dir'"): regress price weight
+    local cmd_line `"cacheit, dir("`test_dir'"): regress price weight"'
+    cap `cmd_line'
     
     // Drop the frame we created
     frame drop temp_frame
     
     qui frames dir
-    local frames_after = r(number)
+    local frames_after : word count `r(frames)'
     
     // Verify frame cleanup works
     if `frames_after' < `frames_before' {
@@ -152,7 +156,7 @@ qui {
         local ++tests_passed
     }
     else {
-        test_fail "BUG-004: Frame cleanup issue" "Frames not properly cleaned"
+        test_fail "BUG-004" "Frame cleanup" "Frames not properly cleaned" `"`cmd_line'"'
         local ++tests_failed
     }
 }
@@ -165,14 +169,15 @@ qui {
     graph drop _all
     
     // Create and cache a simple graph (without special names)
-    cap noisily cacheit, dir("`test_dir'"): scatter price weight
+    local cmd_line `"cacheit, dir("`test_dir'"): scatter price weight"'
+    cap `cmd_line'
     
     if _rc == 0 {
         // Drop graph
         graph drop _all
         
         // Re-run from cache - should restore graph
-        cap noisily cacheit, dir("`test_dir'"): scatter price weight
+        cap `cmd_line'
         
         // Try to describe the graph
         cap graph describe Graph
@@ -182,7 +187,7 @@ qui {
             graph drop _all
         }
         else {
-            test_fail "BUG-005: Graph caching" "Graph not restored from cache"
+            test_fail "BUG-005" "Graph restoration" "Graph not restored from cache" `"`cmd_line'"'
             local ++tests_failed
         }
     }

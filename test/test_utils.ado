@@ -20,8 +20,9 @@ FUNCTIONS:
     - test_pass(testname)
     - test_fail(testname, message)
 */
-discard
 
+discard
+cap program drop assert_equal
 program define assert_equal
     args value1 value2 message
     
@@ -33,6 +34,7 @@ program define assert_equal
     }
 end
 
+cap program drop assert_scalar
 program define assert_scalar
     args value message
     
@@ -43,6 +45,7 @@ program define assert_scalar
     }
 end
 
+cap program drop assert_file_exists
 program define assert_file_exists
     args filepath message
     
@@ -60,6 +63,7 @@ program define assert_file_exists
     }
 end
 
+cap program drop assert_variable_exists
 program define assert_variable_exists
     args varname message
     
@@ -71,6 +75,7 @@ program define assert_variable_exists
     }
 end
 
+cap program drop assert_variable_missing
 program define assert_variable_missing
     args varname message
     
@@ -82,6 +87,7 @@ program define assert_variable_missing
     }
 end
 
+cap program drop assert_frame_exists
 program define assert_frame_exists
     args framename message
     
@@ -93,6 +99,7 @@ program define assert_frame_exists
     }
 end
 
+cap program drop assert_frame_missing
 program define assert_frame_missing
     args framename message
     
@@ -104,29 +111,34 @@ program define assert_frame_missing
     }
 end
 
+cap program drop test_pass
 program define test_pass
     args testname
-    disp "{result:✓ PASS}: `testname'"
+    // Silent pass - only shown in summary
 end
 
+cap program drop test_fail
 program define test_fail
-    args testname message
+    args testname description message cmd
     disp "{err:✗ FAIL}: `testname'"
-    disp "{err:`message'}"
-    error 1
+    if (`"`description'"' != `""') disp `"{err:  `description'}: `message'}"'
+    if (`"`cmd'"' != `""') disp `"{text:  `cmd'}"'
 end
 
+cap program drop test_skip
 program define test_skip
     args testname reason
-    disp "{text:⊘ SKIP}: `testname' ({inp:`reason'})"
+    disp "{text:⊘ SKIP}: `testname'" 
+    disp "{text:  Reason: `reason'}"
 end
 
+cap program drop cleanup_cache
 program define cleanup_cache
     args cache_dir
     
     // Check if directory exists
     mata: if (direxists("`cache_dir'")) {
-        stata("cap cacheit clean, dir(\"" + "`cache_dir'" + "\")")
+        stata(`"cap cacheit clean, dir("`cache_dir'")"')
     }
 end
 

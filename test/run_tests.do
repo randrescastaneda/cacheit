@@ -26,8 +26,10 @@ disp _newline "{title:CACHEIT TEST SUITE RUNNER}" _newline
 // Parse arguments
 local test_suites "bugs core advanced"
 
-// Setup paths
-local test_root = c(sysdir_ado) + "/../../../ado/myados/cacheit/test"
+if ("`c(username)'" == "wb384996") {
+    local test_root "C:\Users\wb384996\OneDrive - WBG\ado\myados\cacheit\test"
+}
+
 capture cd "`test_root'"
 
 if _rc != 0 {

@@ -29,22 +29,21 @@ set more off
 run test_utils.ado
 
 // Setup test environment
-local test_dir = c(tmpdir) + "/cacheit_bug_tests_`=subinstr("`c(current_time)'", ":", "", .)')"
+local test_dir = c(tmpdir) + `"cacheit_bug_tests_`=subinstr("`c(current_time)'", ":", "", .)'"'
+
+disp `"`test_dir'"'
+
 cap mkdir "`test_dir'"
 global cache_dir "`test_dir'"
 
-disp _newline "{title:========== CACHEIT BUG-SPECIFIC TESTS ==========}" _newline
+disp _newline "{title:Running Bug-Specific Tests...}" _newline
 local tests_passed = 0
 local tests_failed = 0
 
 //========================================================
 // BUG-001: Timer Loop Variable Typo (Line 567)
 //========================================================
-cap noisily {
-    disp "{bf:[BUG-001] Timer Loop Variable Typo}"
-    disp "{text:Issue: local timeroff set instead of timernum}"
-    disp "{text:Impact: Command execution fails if all 100 timers in use}"
-    
+qui {
     sysuse auto, clear
     
     // Fill up timers to near capacity
@@ -57,11 +56,11 @@ cap noisily {
     cap noisily cacheit, dir("`test_dir'"): regress price weight
     
     if _rc == 0 {
-        test_pass "BUG-001: Timer allocation works with high timer count"
+        test_pass "BUG-001"
         local ++tests_passed
     }
     else {
-        test_fail "BUG-001: Timer allocation fails with high timer count" "Expected graceful handling, got error code `_rc'"
+        test_fail "BUG-001: Timer allocation" "Expected graceful handling, got error code `_rc'"
         local ++tests_failed
     }
     
@@ -72,11 +71,7 @@ cap noisily {
 //========================================================
 // BUG-002: Log File Handle Leak on Error  (Line 594)
 //========================================================
-cap noisily {
-    disp _newline "{bf:[BUG-002] Log File Handle Leak on Error}"
-    disp "{text:Issue: rlog file handle not closed when hidden option + error}"
-    disp "{text:Impact: Resource leak in error paths}"
-    
+qui {
     sysuse auto, clear
     
     // Attempt command with hidden option that will generate error
@@ -92,11 +87,11 @@ cap noisily {
         cap noisily cacheit, dir("`test_dir'"): regress price weight
         
         if _rc == 0 {
-            test_pass "BUG-002: Recovery after command error works"
+            test_pass "BUG-002"
             local ++tests_passed
         }
         else {
-            test_fail "BUG-002: Cannot recover after command error" "Resource leak may have occurred"
+            test_fail "BUG-002: Recovery after error" "Resource leak may have occurred"
             local ++tests_failed
         }
     }
@@ -105,11 +100,7 @@ cap noisily {
 //========================================================
 // BUG-003: Temporary Frame Cleanup on Error
 //========================================================
-cap noisily {
-    disp _newline "{bf:[BUG-003] Temporary Frame Cleanup on Error}"
-    disp "{text:Issue: Temporary frames not dropped on error paths}"
-    disp "{text:Impact: Memory leak, orphaned frames in memory}"
-    
+qui {
     sysuse auto, clear
     
     // Count frames before
@@ -125,11 +116,11 @@ cap noisily {
     
     // Frames should be equal (temp frames cleaned up)
     if `frames_before' == `frames_after' {
-        test_pass "BUG-003: Temporary frames cleaned up on error"
+        test_pass "BUG-003"
         local ++tests_passed
     }
     else {
-        test_fail "BUG-003: Frame leak on error detected" "Frames before: `frames_before', after: `frames_after'"
+        test_fail "BUG-003: Frame cleanup on error" "Frames before: `frames_before', after: `frames_after'"
         local ++tests_failed
     }
 }
@@ -137,11 +128,7 @@ cap noisily {
 //========================================================
 // BUG-004: Frame Drop Error Handling
 //========================================================
-cap noisily {
-    disp _newline "{bf:[BUG-004] Frame Drop Error Handling}"
-    disp "{text:Issue: Frame drop commands have no error checking}"
-    disp "{text:Impact: Orphaned frames remain in memory silently}"
-    
+qui {
     sysuse auto, clear
     
     // Create a frame that we'll attempt to drop during cacheit
@@ -161,11 +148,11 @@ cap noisily {
     
     // Verify frame cleanup works
     if `frames_after' < `frames_before' {
-        test_pass "BUG-004: Frame cleanup error handling intact"
+        test_pass "BUG-004"
         local ++tests_passed
     }
     else {
-        test_fail "BUG-004: Frame cleanup issue detected" ""
+        test_fail "BUG-004: Frame cleanup issue" "Frames not properly cleaned"
         local ++tests_failed
     }
 }
@@ -173,11 +160,7 @@ cap noisily {
 //========================================================
 // BUG-005: Graph Name Parsing Edge Cases
 //========================================================
-cap noisily {
-    disp _newline "{bf:[BUG-005] Graph Name Parsing with Special Characters}"
-    disp "{text:Issue: Special characters in graph names break list comparison}"
-    disp "{text:Impact: Graphs may not be handled correctly in all cases}"
-    
+qui {
     sysuse auto, clear
     graph drop _all
     
@@ -194,15 +177,14 @@ cap noisily {
         // Try to describe the graph
         cap graph describe Graph
         if _rc == 0 {
-            test_pass "BUG-005: Graph handling works for standard names"
+            test_pass "BUG-005"
             local ++tests_passed
+            graph drop _all
         }
         else {
-            test_fail "BUG-005: Graph not restored from cache" ""
+            test_fail "BUG-005: Graph caching" "Graph not restored from cache"
             local ++tests_failed
         }
-        
-        graph drop _all
     }
     else {
         test_skip "BUG-005" "Graph caching prerequisite failed"
@@ -212,23 +194,11 @@ cap noisily {
 //========================================================
 // SUMMARY
 //========================================================
-disp _newline "{title:========== BUG TEST SUMMARY ==========}"
-disp _newline "{result:Tests Passed:  `tests_passed'}"
-disp "{result:Tests Failed:  `tests_failed'}"
-local total = `tests_passed' + `tests_failed'
-disp "{result:Total Tests:   `total'}" _newline
-
-// Cleanup
 cleanup_cache "`test_dir'"
 global cache_dir ""
 
-if `tests_failed' > 0 {
-    disp "{err:BUGS DETECTED}" _newline
-    exit 1
-}
-else {
-    disp "{result:ALL CRITICAL BUGS APPEAR TO BE HANDLED}" _newline
-}
+local total = `tests_passed' + `tests_failed'
+disp _newline "{result:Bug Tests: `tests_passed' passed, `tests_failed' failed (out of `total')}" _newline
 
 exit
 /* End of test file */

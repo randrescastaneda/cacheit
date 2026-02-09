@@ -137,9 +137,14 @@ program define cleanup_cache
     args cache_dir
     
     // Check if directory exists
-    mata: if (direxists("`cache_dir'")) {
-        stata(`"cap cacheit clean, dir("`cache_dir'")"')
+    mata {
+
+        if (direxists("`cache_dir'")) {
+            stata(`"cap cacheit clean, dir("`cache_dir'")"')
+        }
+        
     }
+
 end
 
 /* End of test_utils.ado */

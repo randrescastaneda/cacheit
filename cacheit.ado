@@ -25,7 +25,7 @@ program define cacheit, rclass properties(prefix)
 	//========================================================
 	//  Parse for single command clean or list
 	//========================================================
-	if regexm("`0'", "^clean") {
+	if regexm(`"`0'"', "^clean") {
 		// Unpack locations for cleaning
 		syntax [anything(name=subcmd)], [dir(string) project(string) hidden_dir hidden]
 
@@ -46,7 +46,7 @@ program define cacheit, rclass properties(prefix)
 		cacheit_clean clean, dir("`dir'") 
 		exit
 	}
-	if regexm("`0'", "^list") {
+	if regexm(`"`0'"', "^list") {
 		//"listing cache"
 		
 		// Unpack locations for list file

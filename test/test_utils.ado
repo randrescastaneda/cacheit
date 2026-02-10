@@ -1,7 +1,5 @@
 /*==================================================
 Test Utilities for cacheit Package
-Author:        Testing Framework
-E-mail:        testing@cacheit.org
 ----------------------------------------------------
 Creation Date:     February 2026
 Purpose:           Provides assertion and test utilities with frame-based result tracking
@@ -36,19 +34,14 @@ discard
 
 cap program drop init_test_results
 program define init_test_results
-    syntax, [framename(string) suite_name(string)]
+    args suitename
     
     // Set defaults
-    if "`framename'" == "" local framename "__cacheit_test_results"
-    if "`suite_name'" == "" local suite_name "default"
+    local framename "__cacheit_test_results"
+    if "`suitename'" == "" local suitename "default"
     
-    // Check if frame already exists
-    cap frame describe `framename'
-    if _rc == 0 {
-        disp "{err:ERROR: Test results frame '`framename'' already exists.}"
-        disp "{text:To start fresh, run: frame drop `framename'}"
-        error 601
-    }
+    // Drop frame if it already exists (allows reuse between test suites)
+    cap frame drop `framename'
     
     // Create the frame with proper structure for frame post
     frame create `framename' ///
@@ -59,12 +52,12 @@ program define init_test_results
         str500(command)
     
     // Store frame name and initialization status in globals
-    global __test_results_frame = "`framename'"
-    global __test_results_init = 1
-    global __test_suite_name = "`suite_name'"
-    global __test_pass_count = 0
-    global __test_fail_count = 0
-    global __test_skip_count = 0
+    global ct_test_results_frame "`framename'"
+    global ct_test_results_init 1
+    global ct_test_suite_name "`suitename'"
+    global ct_test_pass_count 0
+    global ct_test_fail_count 0
+    global ct_test_skip_count 0
     
     disp "{text:Test results frame initialized: `framename'}"
 end
@@ -72,7 +65,7 @@ end
 cap program drop check_test_frame_exists
 program define check_test_frame_exists
     
-    if "${__test_results_init}" != "1" {
+    if "${ct_test_results_init}" != "1" {
         disp "{err:ERROR: Test results frame not initialized.}"
         disp "{text:Run init_test_results at the start of your test file.}"
         error 601
@@ -87,22 +80,22 @@ program define append_test_result
     check_test_frame_exists
     
     // Use frame post for efficient appending
-    frame post ${__test_results_frame} ///
-        ("`test_id'") ///
-        ("`status'") ///
-        ("`description'") ///
-        ("`assertion_msg'") ///
-        ("`command'")
+    frame post ${ct_test_results_frame} ///
+        (`"`test_id'"') ///
+        (`"`status'"') ///
+        (`"`description'"') ///
+        (`"`assertion_msg'"') ///
+        (`"`command'"')
     
     // Update global counters
     if "`status'" == "pass" {
-        global __test_pass_count = ${__test_pass_count} + 1
+        global ct_test_pass_count `= ${ct_test_pass_count} + 1'
     }
     else if "`status'" == "fail" {
-        global __test_fail_count = ${__test_fail_count} + 1
+        global ct_test_fail_count `= ${ct_test_fail_count} + 1'
     }
     else if "`status'" == "skip" {
-        global __test_skip_count = ${__test_skip_count} + 1
+        global ct_test_skip_count `= ${ct_test_skip_count} + 1'
     }
 end
 
@@ -111,14 +104,14 @@ program define print_test_summary, rclass
     
     check_test_frame_exists
     
-    local n_pass = ${__test_pass_count}
-    local n_fail = ${__test_fail_count}
-    local n_skip = ${__test_skip_count}
+    local n_pass = ${ct_test_pass_count}
+    local n_fail = ${ct_test_fail_count}
+    local n_skip = ${ct_test_skip_count}
     local total = `n_pass' + `n_fail' + `n_skip'
     
     // Print summary
     disp _newline "{hline 70}"
-    disp "{bf:TEST SUMMARY - ${__test_suite_name}}"
+    disp "{bf:TEST SUMMARY - ${ct_test_suite_name}}"
     disp "{hline 70}"
     disp "Passed:  {result:`n_pass'}/{result:`total'}"
     if `n_fail' > 0 disp "Failed:  {err:`n_fail'}/{result:`total'}"
@@ -130,7 +123,7 @@ program define print_test_summary, rclass
     // Show failed tests if any
     if `n_fail' > 0 {
         disp "{bf:{err:FAILED TESTS:}}"
-        frame ${__test_results_frame} {
+        frame $ct_test_results_frame {
             list test_id description assertion_msg command if status == "fail", clean noobs
         }
         disp ""
@@ -149,11 +142,11 @@ program define save_test_report
     check_test_frame_exists
     
     // Set defaults
-    if "`filename'" == "" local filename = "test_results_${__test_suite_name}.dta"
+    if "`filename'" == "" local filename = "test_results_${ct_test_suite_name}.dta"
     if "`filepath'" == "" local filepath = c(pwd)
     
     // Save frame data
-    frame ${__test_results_frame} {
+    frame $ct_test_results_frame {
         qui save "`filepath'/`filename'", replace
     }
     
@@ -176,7 +169,7 @@ program define run_test, rclass
     
     local test_status "pass"
     local error_msg ""
-    local rc = 0
+    local rc 0
     
     // Display command if noisily requested
     if "`noisily'" != "" {
@@ -185,7 +178,7 @@ program define run_test, rclass
     
     // Execute command with capture (suppress output by default)
     capture `command'
-    local rc = _rc
+    local rc `_rc'
     
     if `rc' != 0 {
         local test_status "fail"
@@ -339,6 +332,20 @@ program define cleanup_cache
         noi cacheit clean, dir("`cache_dir'") force
     }
 
+end
+
+// ============================================================
+// PAUSE TESTING HELPER
+// ============================================================
+
+cap program drop pause_test
+program pause_test
+    args test_id description
+    
+    // Check if pause is enabled globally
+    if ("${ct_test_pause}" == "pause") {
+        pause "`test_id': `description'"
+    }
 end
 
 /* End of test_utils.ado */

@@ -1,21 +1,11 @@
 /*==================================================
 Unit Tests for cacheit Package - ADVANCED FEATURES
-Author:        Testing Suite
-E-mail:        testing@cacheit.org
 ----------------------------------------------------
 Creation Date:     February 2026
 Purpose:           Tests advanced features: frames, graphs, hidden, datacheck
 ==================================================*/
 
 version 16.1
-clear all
-set more off
-
-// Source test utilities
-run test_utils.ado
-
-// Initialize test results frame
-init_test_results, suite_name("Advanced Features")
 
 // Setup test environment
 local test_dir = c(tmpdir) + "/cacheit_adv_tests_`=subinstr("`c(current_time)'", ":", "", .)'"
@@ -27,6 +17,7 @@ disp _newline "{title:Running Advanced Feature Tests...}" _newline
 //========================================================
 // TEST 101: Frame Caching and Restoration
 //========================================================
+pause_test "ADV-101" "Frame caching and restoration"
 
 sysuse auto, clear
 
@@ -79,6 +70,7 @@ else {
 //========================================================
 // TEST 102: Graph Caching
 //========================================================
+pause_test "ADV-102" "Graph caching"
 
 sysuse auto, clear
 graph drop _all
@@ -113,6 +105,7 @@ else {
 //========================================================
 // TEST 103: Multiple Graphs
 //========================================================
+pause_test "ADV-103" "Multiple graphs"
 
 sysuse auto, clear
 graph drop _all
@@ -132,6 +125,7 @@ else {
 //========================================================
 // TEST 104: Data Modification Caching
 //========================================================
+pause_test "ADV-104" "Data modification caching"
 
 sysuse auto, clear
 
@@ -164,6 +158,7 @@ else {
 //========================================================
 // TEST 105: datacheck Option
 //========================================================
+pause_test "ADV-105" "datacheck option"
 
 sysuse auto, clear
 
@@ -188,6 +183,7 @@ else {
 //========================================================
 // TEST 106: Matrix Restoration
 //========================================================
+pause_test "ADV-106" "Matrix restoration"
 
 sysuse auto, clear
 
@@ -223,6 +219,7 @@ else {
 //========================================================
 // TEST 107: Scalar Preservation
 //========================================================
+pause_test "ADV-107" "Scalar preservation"
 
 sysuse auto, clear
 
@@ -256,6 +253,7 @@ else {
 //========================================================
 // TEST 108: Macro Preservation
 //========================================================
+pause_test "ADV-108" "Macro preservation"
 
 sysuse auto, clear
 
@@ -285,6 +283,7 @@ else {
 //========================================================
 // TEST 109: clear Option
 //========================================================
+pause_test "ADV-109" "clear option"
 
 sysuse auto, clear
 set obs 100
@@ -310,6 +309,7 @@ else {
 //========================================================
 // TEST 110: project Option
 //========================================================
+pause_test "ADV-110" "project option"
 
 sysuse auto, clear
 
@@ -333,15 +333,4 @@ else {
 
 global cache_dir ""
 
-print_test_summary
-local return_code = r(n_fail) > 0
-
-if `return_code' > 0 {
-    exit 1
-}
-else {
-    exit 0
-}
-
-exit
 /* End of test file */

@@ -1,21 +1,12 @@
 /*==================================================
 Unit Tests for cacheit Package - CORE FUNCTIONALITY
-Author:        Testing Suite
-E-mail:        testing@cacheit.org
+
 ----------------------------------------------------
 Creation Date:     February 2026
 Purpose:           Tests core caching and retrieval functionality
 ==================================================*/
 
 version 16.1
-clear all
-set more off
-
-// Source test utilities
-run test_utils.ado
-
-// Initialize test results frame
-init_test_results, suite_name("Core Functionality")
 
 // Setup test environment
 local test_dir = c(tmpdir) + "cacheit_core_tests_`=subinstr("`c(current_time)'", ":", "", .)'"
@@ -27,6 +18,8 @@ disp _newline "{title:Running Core Functionality Tests...}" _newline
 //========================================================
 // TEST 001: Basic Caching - First Run
 //========================================================
+pause_test "CORE-001" "Basic caching - first run"
+
 sysuse auto, clear
 local cmd_line `"cacheit, dir("`test_dir'"): regress price weight length"'
 capture `cmd_line'
@@ -42,6 +35,8 @@ else {
 //========================================================
 // TEST 002: Cache File Creation
 //========================================================
+pause_test "CORE-002" "Cache file creation"
+
 sysuse auto, clear
 local cmd_line `"cacheit, dir("`test_dir'"): regress price weight length"'
 capture `cmd_line'
@@ -60,6 +55,8 @@ else {
 //========================================================
 // TEST 003: Cached Retrieval
 //========================================================
+pause_test "CORE-003" "Cached retrieval"
+
 sysuse auto, clear
 
 // First run
@@ -86,6 +83,8 @@ else {
 //========================================================
 // TEST 004: Return List Preservation
 //========================================================
+pause_test "CORE-004" "Return list preservation"
+
 sysuse auto, clear
 
 local cmd_line `"cacheit, dir("`test_dir'"): summ price"'
@@ -111,6 +110,8 @@ else {
 //========================================================
 // TEST 005: ereturn Matrices
 //========================================================
+pause_test "CORE-005" "ereturn matrices"
+
 sysuse auto, clear
 local cmd_line `"cacheit, dir("`test_dir'"): regress price weight length displacement"'
 capture `cmd_line'
@@ -133,6 +134,8 @@ else {
 //========================================================
 // TEST 006: nodata Option
 //========================================================
+pause_test "CORE-006" "nodata option"
+
 sysuse auto, clear
 local orig_obs = _N
 local cmd_line `"cacheit, dir("`test_dir'") nodata: generate test_var = price * 2"'
@@ -149,6 +152,8 @@ else {
 //========================================================
 // TEST 007: replace Option
 //========================================================
+pause_test "CORE-007" "replace option"
+
 sysuse auto, clear
 local cmd_line `"cacheit, dir("`test_dir'"): regress price weight"'
 capture `cmd_line'
@@ -175,6 +180,8 @@ sysuse auto, clear
 //========================================================
 // TEST 008: keepall Option
 //========================================================
+pause_test "CORE-008" "keepall option"
+
 sysuse auto, clear
 
 // First command
@@ -195,6 +202,8 @@ else {
 //========================================================
 // TEST 009: Hash Consistency
 //========================================================
+pause_test "CORE-009" "Hash consistency"
+
 local cmd_line `"cacheit, dir("`test_dir'"): regress price weight"'
 capture `cmd_line'
 local hash_1 = r(call_hash)
@@ -214,6 +223,8 @@ else {
 //========================================================
 // TEST 010: Different Commands Different Hash
 //========================================================
+pause_test "CORE-010" "Different commands produce different hash"
+
 sysuse auto, clear
 local cmd_line_1 `"cacheit, dir("`test_dir'"): regress price weight"'
 capture `cmd_line_1'
@@ -237,15 +248,4 @@ else {
 //========================================================
 cleanup_cache "`test_dir'"
 
-print_test_summary
-local return_code = r(n_fail) > 0
-if `return_code' > 0 {
-    disp "{err:Some tests failed.}"
-    exit 1
-}
-else {
-    disp "{result:All core tests passed!}"
-}
-
-exit
 /* End of test file */

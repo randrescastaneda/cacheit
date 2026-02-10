@@ -1,7 +1,5 @@
 /*==================================================
 Unit Tests for cacheit Package - BUG-SPECIFIC TESTS
-Author:        Testing Suite
-E-mail:        testing@cacheit.org
 ----------------------------------------------------
 Creation Date:     February 2026
 Purpose:           Tests that specifically target identified bugs
@@ -27,15 +25,7 @@ TESTS:
 version 16.1
 
 // Setup
-clear all
-set more off
 timer clear
-
-// Source test utilities
-run test_utils.ado
-
-// Initialize test results frame
-init_test_results, suite_name("Bug-Specific Tests")
 
 // Setup test environment
 global test_dir = c(tmpdir) + `"cacheit_bug_tests_`=subinstr("`c(current_time)'", ":", "", .)'"'
@@ -48,6 +38,7 @@ disp _newline "{title:Running Bug-Specific Tests...}" _newline
 //========================================================
 // BUG-001: Timer Loop Variable Typo (Line 567)
 //========================================================
+pause_test "BUG-001" "Timer allocation with high timer count"
 qui {
     sysuse auto, clear
     
@@ -64,11 +55,11 @@ qui {
     
     if `rc' == 0 {
         // Should succeed if bug is fixed (graceful handling)
-        append_test_result, test_id("BUG-001") status("pass") description("Timer allocation with high timer count") command("`cmd_line'")
+        append_test_result, test_id("BUG-001") status("pass") description("Timer allocation with high timer count") command(`"`cmd_line'"')
     }
     else {
         // Test FAILS because bug exists (timernum undefined causes error)
-        append_test_result, test_id("BUG-001") status("fail") description("Timer allocation with high timer count") assertion_msg("Command failed with all timers full (timernum likely undefined): Error code `rc'") command("`cmd_line'")
+        append_test_result, test_id("BUG-001") status("fail") description("Timer allocation with high timer count") assertion_msg(`"Command failed with all timers full (timernum likely undefined): Error code `rc'"') command(`"`cmd_line'"')
     }
     
     // Reset timers
@@ -81,6 +72,7 @@ qui {
 //       when programs exit, so this won't cause runtime failure.
 //       However, explicit cleanup is still best practice.
 //========================================================
+pause_test "BUG-002" "Log file handle leak on error"
 qui {
     sysuse auto, clear
     
@@ -112,6 +104,8 @@ qui {
 //       when programs exit, so leaked frames don't persist.
 //       However, explicit cleanup is still best practice.
 //========================================================
+pause_test "BUG-003" "Temporary frame cleanup on error"
+
 qui {
     sysuse auto, clear
     
@@ -142,6 +136,8 @@ qui {
 //       errors aren't gracefully handled, but in normal operation
 //       frames exist and drop succeeds.
 //========================================================
+pause_test "BUG-004" "Unguarded frame drops"
+
 qui {
     sysuse auto, clear
     
@@ -168,6 +164,7 @@ qui {
 // BUG-005: Graph Caching and Restoration Test
 // NOTE: This tests that graph functionality works correctly.
 //========================================================
+pause_test "BUG-005" "Graph caching and restoration"
 
 qui {
     sysuse auto, clear
@@ -205,16 +202,4 @@ cacheit clean, dir("${test_dir}") force
 
 global cache_dir ""
 
-print_test_summary
-local has_failures = r(n_fail) > 0
-
-if `has_failures' > 0 {
-    disp "{err:TESTS FAILED - Bugs detected that cause runtime failures}"
-    exit 1
-}
-else {
-    disp "{text:All runtime tests passed. Note: BUG-002, BUG-003, BUG-004 are}"
-    disp "{text:code quality issues that should still be fixed in cacheit.ado}"
-    exit 0
-}
 /* End of test file */

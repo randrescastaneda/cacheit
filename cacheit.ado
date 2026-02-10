@@ -25,9 +25,9 @@ program define cacheit, rclass properties(prefix)
 	//========================================================
 	//  Parse for single command clean or list
 	//========================================================
-	if regexm("`0'", "^clean") {
+	if regexm(`"`0'"', "^clean") {
 		// Unpack locations for cleaning
-		syntax [anything(name=subcmd)], [dir(string) project(string) hidden_dir hidden]
+		syntax [anything(name=subcmd)], [dir(string) project(string) hidden_dir hidden force]
 
 		// If hidden_dir is set, override dir to use .cache in current working directory
 		if ("`hidden_dir'" != "" | "`hidden'" != "") {
@@ -43,10 +43,10 @@ program define cacheit, rclass properties(prefix)
 		}
 
 		//clean cache
-		cacheit_clean clean, dir("`dir'") 
+		cacheit_clean clean, dir("`dir'") `force'
 		exit
 	}
-	if regexm("`0'", "^list") {
+	if regexm(`"`0'"', "^list") {
 		//"listing cache"
 		
 		// Unpack locations for list file
@@ -113,6 +113,7 @@ program define cacheit, rclass properties(prefix)
 		hidden                   ///  keeps hidden returns hidden
 		clear                    ///  
 		replace                  ///  replace says to re-run even if the cache is there
+		force					///  force cleans without asking
 	]
 
 	//========================================================
@@ -564,13 +565,14 @@ program define cacheit, rclass properties(prefix)
 	forvalues i =  1/100  {
     	if mi(scalar(r(nt`i'))) {
 			local timernum = `i'
-			local timeoff = 0
+			local timeroff = 0  //  'timeoff', now matches variable name
         	continue , break
 	    }
 	}
 
 	//Log output and then this can be printed when cached command called
 	tempname logfile
+	cap log close `logfile'
 	qui log using "`dir'/`call_hash'", name(`logfile') replace
 
 	//Write current command to cache log for future reference if consulted
@@ -601,7 +603,10 @@ program define cacheit, rclass properties(prefix)
 		`right' `clear'
 	}
 	else if _rc!=0 {
-		qui log close `logfile'	
+		qui log close `logfile'
+		if "`hidden'"!="" qui log close rlog  //close rlog on error
+		cap frame drop `hashcheck'  //clean frames on error
+		cap frame drop `elements'
 		exit
 	}
 	qui timer list
@@ -726,7 +731,7 @@ program define cacheit, rclass properties(prefix)
 	cwf `origframe'
 
 	foreach n in scalars macros matrices {
-		frame drop ``n'_results'
+		cap frame drop ``n'_results'  // use cap to handle errors
 	}
 	qui log close `logfile'
 	if `newhide'==1 {

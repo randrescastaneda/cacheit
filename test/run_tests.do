@@ -1,7 +1,5 @@
 /*==================================================
 Master Test Runner for cacheit Package
-Author:        Testing Framework
-E-mail:        testing@cacheit.org
 ----------------------------------------------------
 Creation Date:     February 2026
 Purpose:           Runs all test suites and generates report
@@ -21,6 +19,9 @@ clear all
 discard // very important for changes in the cacheit package
 set more off
 
+// Source test utilities for master tracking
+run test_utils.ado
+
 disp _newline "{title:CACHEIT TEST SUITE RUNNER}" _newline
 
 // Parse arguments
@@ -35,7 +36,7 @@ else {
     local test_root "`c(pwd)'"
 }
 
-cd "`test_root'"
+cap cd "`test_root'"
 
 if _rc != 0 {
     disp "{err:ERROR: Could not navigate to test directory}"
@@ -47,55 +48,75 @@ if _rc != 0 {
 // RUN BUG-SPECIFIC TESTS
 //========================================================
 local overall_rc = 0
+local suite_count = 0
 
-//========================================================
-// RUN BUG-SPECIFIC TESTS
-//========================================================
 if strpos("`test_suites'", "bugs") > 0 {
+    disp _newline "{title:Running BUG tests...}" _newline
     cap noisily do unit/test_units_bugs.do
-    if _rc != 0 {
+    local rc_bugs = _rc
+    
+    if `rc_bugs' != 0 {
         local overall_rc = 1
-        disp "{err:BUG TESTS FAILED}"
+        disp _newline "{err:✗ BUG TESTS FAILED}" _newline
     }
     else {
-        disp "{result:BUG TESTS PASSED}"
+        disp _newline "{result:✓ BUG TESTS PASSED}" _newline
     }
+    local ++suite_count
 }
 
 //========================================================
 // RUN CORE FUNCTIONALITY TESTS
 //========================================================
 if strpos("`test_suites'", "core") > 0 {
+    disp _newline "{title:Running CORE tests...}" _newline
     cap noisily do unit/test_units_core.do
-    if _rc != 0 {
+    local rc_core = _rc
+    
+    if `rc_core' != 0 {
         local overall_rc = 1
-        disp "{err:CORE TESTS FAILED}"
+        disp _newline "{err:✗ CORE TESTS FAILED}" _newline
     }
     else {
-        disp "{result:CORE TESTS PASSED}"
+        disp _newline "{result:✓ CORE TESTS PASSED}" _newline
     }
+    local ++suite_count
 }
 
 //========================================================
 // RUN ADVANCED FEATURE TESTS
 //========================================================
 if strpos("`test_suites'", "advanced") > 0 {
+    disp _newline "{title:Running ADVANCED tests...}" _newline
     cap noisily do unit/test_units_advanced.do
-    if _rc != 0 {
+    local rc_advanced = _rc
+    
+    if `rc_advanced' != 0 {
         local overall_rc = 1
-        disp "{err:ADVANCED TESTS FAILED}"
+        disp _newline "{err:✗ ADVANCED TESTS FAILED}" _newline
     }
     else {
-        disp "{result:ADVANCED TESTS PASSED}"
+        disp _newline "{result:✓ ADVANCED TESTS PASSED}" _newline
     }
+    local ++suite_count
 }
 
 if `overall_rc' == 0 {
-    disp _newline "{result:All test suites completed successfully.}" _newline
+    disp _newline "{hline 70}"
+    disp "{bf:MASTER TEST SUMMARY}"
+    disp "{hline 70}"
+    disp "Test suites run: `suite_count'"
+    disp _newline "{result:✓ SUCCESS: All test suites completed successfully.}" _newline
+    disp "{text:For detailed test results, see individual test output above.}"
     exit 0
 }
 else {
-    disp _newline "{err:Some test suites had failures.}" _newline
+    disp _newline "{hline 70}"
+    disp "{bf:MASTER TEST SUMMARY}"
+    disp "{hline 70}"
+    disp "Test suites run: `suite_count'"
+    disp _newline "{err:✗ FAILURE: Some test suites had failures.}" _newline
+    disp "{text:Review error messages above for details.}"
     exit 1
 }
 /* End of test runner */

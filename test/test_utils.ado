@@ -4,24 +4,79 @@ Author:        Testing Framework
 E-mail:        testing@cacheit.org
 ----------------------------------------------------
 Creation Date:     February 2026
-Purpose:           Provides assertion and test utilities
+Purpose:           Provides assertion and test utilities with frame-based result tracking
 ==================================================*/
 
 /*
 USAGE:
     source test_utils.ado before running tests
     
-FUNCTIONS:
+CORE FUNCTIONS:
+    - init_test_results: Initialize the test results frame
+    - append_test_result: Add a test result to the frame
+    - run_test: Execute a test command with result tracking
+    - check_test_frame_exists: Verify frame is initialized
+    - print_test_summary: Display test results summary
+    - save_test_report: Save results to disk
+    
+ASSERTION FUNCTIONS:
     - assert_equal(value1, value2, "message")
     - assert_scalar(value, "message")
     - assert_file_exists(path, "message")
     - assert_variable_exists(varname, "message")
-    - assert_no_error()
-    - test_pass(testname)
-    - test_fail(testname, message)
+    - assert_frame_exists(framename, "message")
+    - assert_frame_missing(framename, "message")
 */
 
 discard
+
+// ============================================================
+// TEST EXECUTION WRAPPER
+// ============================================================
+
+cap program drop run_test
+program define run_test, rclass
+    syntax, ///
+        id(string) ///
+        description(string) ///
+        command(string) ///
+        [noisily]
+    
+    check_test_frame_exists
+    
+    local test_status "pass"
+    local error_msg ""
+    local rc = 0
+    
+    // Display command if noisily requested
+    if "`noisily'" != "" {
+        disp "{text:Running: `command'}"
+    }
+    
+    // Execute command with capture (suppress output by default)
+    cap noisily `command'
+    local rc = _rc
+    
+    if `rc' != 0 {
+        local test_status "fail"
+        local error_msg "Error code: `rc'"
+    }
+    
+    // Log result to frame
+    append_test_result, ///
+        test_id("`id'") ///
+        status("`test_status'") ///
+        description("`description'") ///
+        assertion_msg("`error_msg'") ///
+        command("`command'")
+    
+    return scalar rc = `rc'
+    return local status = "`test_status'"
+end
+
+// ============================================================
+// ASSERTION FUNCTIONS
+// ============================================================
 cap program drop assert_equal
 program define assert_equal
     args value1 value2 message
@@ -113,10 +168,15 @@ program define assert_frame_missing
     }
 end
 
+// ============================================================
+// LEGACY TEST FUNCTIONS (for backward compatibility)
+// Note: These are deprecated. Use run_test() and append_test_result() instead
+// ============================================================
+
 cap program drop test_pass
 program define test_pass
     args testname
-    // Silent pass - only shown in summary
+    // Legacy function - now tracked via frame
 end
 
 cap program drop test_fail
@@ -133,6 +193,10 @@ program define test_skip
     noi disp "{text:⊘ SKIP}: `testname'" 
     noi disp "{text:  Reason: `reason'}"
 end
+
+// ============================================================
+// UTILITY FUNCTIONS
+// ============================================================
 
 cap program drop cleanup_cache
 program define cleanup_cache

@@ -14,7 +14,6 @@ program define run_tests, rclass
         ]
     
     version 16.1
-    cls
     
     // ============================================================
     // SETUP
@@ -63,7 +62,8 @@ program define run_tests, rclass
     
     // Source test utilities
     do test/test_utils.ado
-    
+    cls // clean console
+
     // Initialize single frame for all tests
     init_test_results "cacheit Test Suite"
     
@@ -104,15 +104,60 @@ program define run_tests, rclass
     // CONSOLIDATED TEST SUMMARY
     // ============================================================
     
-    noi print_test_summary
-    local n_fail = r(n_fail)
+    local n_pass = 0
+    local n_fail = 0
+    local n_skip = 0
+    
+    // Count results from frame
+    frame $ct_test_results_frame {
+        qui count if status == "pass"
+        local n_pass = r(N)
+        qui count if status == "fail"
+        local n_fail = r(N)
+        qui count if status == "skip"
+        local n_skip = r(N)
+    }
+    
+    local total = `n_pass' + `n_fail' + `n_skip'
+    
+    // ============================================================
+    // DISPLAY SIMPLE SUMMARY
+    // ============================================================
+    
+    disp _newline "{hline 70}"
+    disp "{bf:TEST RESULTS SUMMARY}"
+    disp "{hline 70}"
+    disp _newline "Passed:  {result:`n_pass'}/{result:`total'}"
+    if `n_fail' > 0 {
+        disp "Failed:  {err:`n_fail'}/{result:`total'}"
+    } 
+    else {
+        disp "Failed:  {result:`n_fail'}/{result:`total'}"
+    }
+    if `n_skip' > 0 {
+        disp "Skipped: {text:`n_skip'}/{result:`total'}"
+    } 
+    else {
+        disp "Skipped: {result:`n_skip'}/{result:`total'}"
+    }
+    disp _newline "{hline 70}"
+    
+    // ============================================================
+    // FRAME AVAILABILITY MESSAGE
+    // ============================================================
+    
+    disp _newline "{bf:Test Results Frame}"
+    disp "{text:Frame name: {result:__cacheit_test_results}}"
+    disp "{text:  Load frame:  {input:cwf __cacheit_test_results}}"
+    disp "{text:  View data:   {input:list}}"
+    disp "{text:  Return info: {input:frame dir}}" _newline
     
     // ============================================================
     // CLEANUP AND EXIT
     // ============================================================
     
-    // Clean up frame
-    cap frame drop ${ct_test_results_frame}
+    // NOTE: Frame is kept available for data inspection
+    // Do NOT drop the frame here
     
     // Reset pause state
     pause off
@@ -127,24 +172,28 @@ program define run_tests, rclass
     }
     
     // Display final message
-    disp _newline "{hline 70}"
     if `overall_rc' == 0 {
         disp "{result:✓ SUCCESS: All tests passed}" _newline
     } 
     else {
         disp "{err:✗ FAILURE: Some tests failed}" _newline
+        disp "{text:Use the frame to inspect detailed failure information.}" _newline
     }
-    disp "{hline 70}" _newline
     
     // Return results
     return scalar n_fail = `n_fail'
+    return scalar n_pass = `n_pass'
+    return scalar n_skip = `n_skip'
+    return scalar n_total = `total'
     return scalar rc = `overall_rc'
     
-    // Exit with appropriate code
-    exit `overall_rc'
+    // Only exit in batch mode (allows frame inspection in interactive mode)
+    if c(mode) == "batch" {
+        exit `overall_rc'
+    }
     
 end
 
 /* End of run_tests.ado */
 
-*! version 0.0.1
+*! version 0.0.2

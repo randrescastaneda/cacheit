@@ -120,16 +120,16 @@ end
 cap program drop test_fail
 program define test_fail
     args testname description message cmd
-    disp "{err:✗ FAIL}: `testname'"
-    if (`"`description'"' != `""') disp `"{err:  `description'}: `message'}"'
-    if (`"`cmd'"' != `""') disp `"{text:  `cmd'}"'
+    noi disp "{err:✗ FAIL}: `testname'"
+    if (`"`description'"' != `""') noi disp `"{err:  `description'}: `message'}"'
+    if (`"`cmd'"' != `""') noi disp `"{text:  `cmd'}"'
 end
 
 cap program drop test_skip
 program define test_skip
     args testname reason
-    disp "{text:⊘ SKIP}: `testname'" 
-    disp "{text:  Reason: `reason'}"
+    noi disp "{text:⊘ SKIP}: `testname'" 
+    noi disp "{text:  Reason: `reason'}"
 end
 
 cap program drop cleanup_cache

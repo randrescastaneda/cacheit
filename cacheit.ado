@@ -603,11 +603,12 @@ program define cacheit, rclass properties(prefix)
 		`right' `clear'
 	}
 	else if _rc!=0 {
+		local orig_rc = _rc
 		qui log close `logfile'
 		if "`hidden'"!="" qui log close rlog  //close rlog on error
 		cap frame drop `hashcheck'  //clean frames on error
 		cap frame drop `elements'
-		exit
+		exit `orig_rc'
 	}
 	qui timer list
 	local commandtime = r(t`timernum')

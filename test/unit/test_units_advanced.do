@@ -42,7 +42,7 @@ cwf default
 
 // Run command using the frame
 local cmd_line `"cacheit, dir("`test_dir'") framecheck(data_frame): summ x"'
-quietly capture `cmd_line'
+capture `cmd_line'
 local rc = _rc
 
 if `rc' == 0 {
@@ -85,7 +85,7 @@ graph drop _all
 
 // Create and cache graph
 local cmd_line `"cacheit, dir("`test_dir'"): scatter price weight"'
-quietly capture `cmd_line'
+capture `cmd_line'
 local rc = _rc
 
 if `rc' == 0 {
@@ -119,7 +119,7 @@ graph drop _all
 
 // Create multiple graphs
 local cmd_line `"cacheit, dir("`test_dir'"): scatter price weight"'
-quietly capture `cmd_line'
+capture `cmd_line'
 local rc = _rc
 
 if `rc' == 0 {
@@ -137,7 +137,7 @@ sysuse auto, clear
 
 // Modify data and cache
 local cmd_line `"cacheit, dir("`test_dir'"): generate log_price = log(price)"'
-quietly capture `cmd_line'
+capture `cmd_line'
 local rc = _rc
 
 if `rc' == 0 {
@@ -175,7 +175,7 @@ save "`external'"
 // Use datacheck
 sysuse auto, clear
 local cmd_line `"cacheit, dir("`test_dir'") datacheck("`external'"): regress price weight"'
-quietly capture `cmd_line'
+capture `cmd_line'
 local rc = _rc
 
 if `rc' == 0 {
@@ -193,7 +193,7 @@ sysuse auto, clear
 
 // Run regression (creates e(b), e(V), e(beta))
 local cmd_line `"cacheit, dir("`test_dir'"): regress price weight length displacement"'
-quietly capture `cmd_line'
+capture `cmd_line'
 local rc = _rc
 
 if `rc' == 0 {
@@ -228,7 +228,7 @@ sysuse auto, clear
 
 // Regression preserves many scalars
 local cmd_line `"cacheit, dir("`test_dir'"): regress price weight length"'
-quietly capture `cmd_line'
+capture `cmd_line'
 local rc = _rc
 
 if `rc' == 0 {
@@ -260,7 +260,7 @@ else {
 sysuse auto, clear
 
 local cmd_line `"cacheit, dir("`test_dir'"): regress price weight length"'
-quietly capture `cmd_line'
+capture `cmd_line'
 local rc = _rc
 
 if `rc' == 0 {
@@ -292,7 +292,7 @@ set obs 100
 // This would normally fail with "data in memory would be lost"
 // clear option allows it
 local cmd_line `"cacheit, dir("`test_dir'") clear: sysuse auto"'
-quietly capture `cmd_line'
+capture `cmd_line'
 local rc = _rc
 
 if `rc' == 0 {
@@ -315,7 +315,7 @@ sysuse auto, clear
 
 // Use project subdirectory
 local cmd_line `"cacheit, dir("`test_dir'") project(test_proj): regress price weight"'
-quietly capture `cmd_line'
+capture `cmd_line'
 local rc = _rc
 
 if `rc' == 0 {

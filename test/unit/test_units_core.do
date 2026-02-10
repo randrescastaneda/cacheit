@@ -29,7 +29,7 @@ disp _newline "{title:Running Core Functionality Tests...}" _newline
 //========================================================
 sysuse auto, clear
 local cmd_line `"cacheit, dir("`test_dir'"): regress price weight length"'
-quietly capture `cmd_line'
+capture `cmd_line'
 local rc = _rc
 
 if `rc' == 0 {
@@ -44,7 +44,7 @@ else {
 //========================================================
 sysuse auto, clear
 local cmd_line `"cacheit, dir("`test_dir'"): regress price weight length"'
-quietly capture `cmd_line'
+capture `cmd_line'
 local hash = r(call_hash)
 
 // Look for cache files
@@ -64,7 +64,7 @@ sysuse auto, clear
 
 // First run
 local cmd_line `"cacheit, dir("`test_dir'"): regress price weight"'
-quietly capture `cmd_line'
+capture `cmd_line'
 local r2_first = e(r2)
 local N_first = e(N)
 
@@ -72,7 +72,7 @@ local N_first = e(N)
 ereturn clear
 
 // Second run - should load from cache
-quietly capture `cmd_line'
+capture `cmd_line'
 local r2_second = e(r2)
 local N_second = e(N)
 
@@ -89,14 +89,14 @@ else {
 sysuse auto, clear
 
 local cmd_line `"cacheit, dir("`test_dir'"): summ price"'
-quietly capture `cmd_line'
+capture `cmd_line'
 local mean_first = r(mean)
 local sd_first = r(sd)
 local N_first = r(N)
 
 return clear
 
-quietly capture `cmd_line'
+capture `cmd_line'
 local mean_second = r(mean)
 local sd_second = r(sd)
 local N_second = r(N)
@@ -113,13 +113,13 @@ else {
 //========================================================
 sysuse auto, clear
 local cmd_line `"cacheit, dir("`test_dir'"): regress price weight length displacement"'
-quietly capture `cmd_line'
+capture `cmd_line'
 local b_dims_1 = rowsof(e(b))
 local V_dims_1 = rowsof(e(V))
 
 ereturn clear
 
-quietly capture `cmd_line'
+capture `cmd_line'
 local b_dims_2 = rowsof(e(b))
 local V_dims_2 = rowsof(e(V))
 
@@ -136,7 +136,7 @@ else {
 sysuse auto, clear
 local orig_obs = _N
 local cmd_line `"cacheit, dir("`test_dir'") nodata: generate test_var = price * 2"'
-quietly capture `cmd_line'
+capture `cmd_line'
 
 // Check that variable wasn't created on reload
 cap describe test_var
@@ -151,7 +151,7 @@ else {
 //========================================================
 sysuse auto, clear
 local cmd_line `"cacheit, dir("`test_dir'"): regress price weight"'
-quietly capture `cmd_line'
+capture `cmd_line'
 local N_first = e(N)
 
 // Modify data
@@ -159,7 +159,7 @@ drop if _n > 50
 
 // Second run WITH replace should use new data
 local cmd_line_replace `"cacheit, dir("`test_dir'") replace: regress price weight"'
-quietly capture `cmd_line_replace'
+capture `cmd_line_replace'
 local N_second = e(N)
 
 if `N_second' < `N_first' {
@@ -182,7 +182,7 @@ cacheit, dir("`test_dir'"): summ price
 local mean = r(mean)
 
 local cmd_line `"cacheit, dir("`test_dir'") keepall: summ length"'
-quietly capture `cmd_line'
+capture `cmd_line'
 local rc = _rc
 
 if `rc' == 0 {
@@ -196,12 +196,12 @@ else {
 // TEST 009: Hash Consistency
 //========================================================
 local cmd_line `"cacheit, dir("`test_dir'"): regress price weight"'
-quietly capture `cmd_line'
+capture `cmd_line'
 local hash_1 = r(call_hash)
 
 return clear
 
-quietly capture `cmd_line'
+capture `cmd_line'
 local hash_2 = r(call_hash)
 
 if "`hash_1'" == "`hash_2'" {
@@ -216,13 +216,13 @@ else {
 //========================================================
 sysuse auto, clear
 local cmd_line_1 `"cacheit, dir("`test_dir'"): regress price weight"'
-quietly capture `cmd_line_1'
+capture `cmd_line_1'
 local hash_1 = r(call_hash)
 
 return clear
 
 local cmd_line_2 `"cacheit, dir("`test_dir'"): regress price weight length"'
-quietly capture `cmd_line_2'
+capture `cmd_line_2'
 local hash_2 = r(call_hash)
 
 if "`hash_1'" != "`hash_2'" {

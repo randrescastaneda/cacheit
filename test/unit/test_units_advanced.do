@@ -15,7 +15,7 @@ set more off
 run test_utils.ado
 
 // Setup test environment
-local test_dir = c(tmpdir) + "/cacheit_adv_tests_`=subinstr("`c(current_time)'", ":", "", .)')"
+local test_dir = c(tmpdir) + "/cacheit_adv_tests_`=subinstr("`c(current_time)'", ":", "", .)'"
 cap mkdir "`test_dir'"
 global cache_dir "`test_dir'"
 
@@ -129,6 +129,10 @@ cap noisily {
     if _rc == 0 {
         test_skip "TEST 103" "Complex graph scenario"
         local ++tests_passed
+    }
+    else {
+        test_fail "TEST 103" "Multiple graphs" "Graph creation failed" `"`cmd_line'"'
+        local ++tests_failed
     }
 }
 
@@ -338,7 +342,7 @@ cap noisily {
 //========================================================
 // SUMMARY
 //========================================================
-cleanup_cache "`test_dir'"
+disp _newline "{result:Advanced Tests: `tests_passed' passed, `tests_failed' failed (out of `total')}" _newline
 global cache_dir ""
 
 local total = `tests_passed' + `tests_failed'

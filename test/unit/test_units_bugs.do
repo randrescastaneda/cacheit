@@ -110,7 +110,6 @@ qui {
 //========================================================
 // BUG-003: Temporary Frame Cleanup on Error
 //========================================================
-qui {
 //   NOTE: This is a CODE QUALITY issue. Stata auto-cleans frames
 //       when programs exit, so leaked frames don't persist.
 //       However, explicit cleanup is still best practice.
@@ -135,7 +134,9 @@ qui {
         // NOTE: Bug exists in code but Stata cleans up automatically
     }
     else {
-        noi test_fail "BUG-003" "Frame cleanup" "Unexpected frame leak: before=`frames_before', after=`frames_after'
+        noi test_fail "BUG-003" "Frame cleanup" "Unexpected frame leak: before=`frames_before', after=`frames_after'"
+        local ++tests_failed
+    }
 }
 
 //========================================================
@@ -167,12 +168,11 @@ qui {
         local ++tests_failed
     }
 }
-
 //========================================================
-// BUG-005: Graph Name Parsing Edge Cases
-//================Caching and Restoration Test
+// BUG-005: Graph Caching and Restoration Test
 // NOTE: This tests that graph functionality works correctly.
 //========================================================
+
 qui {
     sysuse auto, clear
     graph drop _all

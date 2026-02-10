@@ -26,11 +26,16 @@ disp _newline "{title:CACHEIT TEST SUITE RUNNER}" _newline
 // Parse arguments
 local test_suites "bugs core advanced"
 
+// User-specific overrides (add your path if needed)
 if ("`c(username)'" == "wb384996") {
     local test_root "C:\Users\wb384996\OneDrive - WBG\ado\myados\cacheit\test"
 }
+else {
+    // Default: use current working directory
+    local test_root "`c(pwd)'"
+}
 
-capture cd "`test_root'"
+cd "`test_root'"
 
 if _rc != 0 {
     disp "{err:ERROR: Could not navigate to test directory}"
@@ -41,9 +46,19 @@ if _rc != 0 {
 //========================================================
 // RUN BUG-SPECIFIC TESTS
 //========================================================
+local overall_rc = 0
+
+//========================================================
+// RUN BUG-SPECIFIC TESTS
+//========================================================
 if strpos("`test_suites'", "bugs") > 0 {
-    cap {
-        do unit/test_units_bugs.do
+    cap noisily do unit/test_units_bugs.do
+    if _rc != 0 {
+        local overall_rc = 1
+        disp "{err:BUG TESTS FAILED}"
+    }
+    else {
+        disp "{result:BUG TESTS PASSED}"
     }
 }
 
@@ -51,8 +66,13 @@ if strpos("`test_suites'", "bugs") > 0 {
 // RUN CORE FUNCTIONALITY TESTS
 //========================================================
 if strpos("`test_suites'", "core") > 0 {
-    cap {
-        do unit/test_units_core.do
+    cap noisily do unit/test_units_core.do
+    if _rc != 0 {
+        local overall_rc = 1
+        disp "{err:CORE TESTS FAILED}"
+    }
+    else {
+        disp "{result:CORE TESTS PASSED}"
     }
 }
 
@@ -60,12 +80,22 @@ if strpos("`test_suites'", "core") > 0 {
 // RUN ADVANCED FEATURE TESTS
 //========================================================
 if strpos("`test_suites'", "advanced") > 0 {
-    cap {
-        do unit/test_units_advanced.do
+    cap noisily do unit/test_units_advanced.do
+    if _rc != 0 {
+        local overall_rc = 1
+        disp "{err:ADVANCED TESTS FAILED}"
+    }
+    else {
+        disp "{result:ADVANCED TESTS PASSED}"
     }
 }
 
-disp _newline "{result:Tests completed." _newline
-
-exit
+if `overall_rc' == 0 {
+    disp _newline "{result:All test suites completed successfully.}" _newline
+    exit 0
+}
+else {
+    disp _newline "{err:Some test suites had failures.}" _newline
+    exit 1
+}
 /* End of test runner */

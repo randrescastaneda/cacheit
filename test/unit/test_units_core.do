@@ -15,7 +15,7 @@ set more off
 run test_utils.ado
 
 // Setup test environment
-local test_dir = c(tmpdir) + "/cacheit_core_tests_`=subinstr("`c(current_time)'", ":", "", .)')"
+local test_dir = c(tmpdir) + "cacheit_core_tests_`=subinstr("`c(current_time)'", ":", "", .)'"
 cap mkdir "`test_dir'"
 global cache_dir "`test_dir'"
 
@@ -124,7 +124,6 @@ cap noisily {
     }
     else {
         test_fail "TEST 004" "Return list preservation" "mean/sd/N mismatch" `"`cmd_line'"'
-        test_fail "TEST 004: Return lists not preserved" ""
         local ++tests_failed
     }
 }
@@ -152,7 +151,6 @@ cap noisily {
     }
     else {
         test_fail "TEST 005" "ereturn matrices preservation" "Matrix dimensions mismatch" `"`cmd_line'"'
-        test_fail "TEST 005: ereturn matrices not preserved" ""
         local ++tests_failed
     }
 }
@@ -176,12 +174,8 @@ cap noisily {
     }
     else {
         test_fail "TEST 006" "nodata option" "Variable should not exist after reload" `"`cmd_line'"'
-    else {
-        test_fail "TEST 006: nodata option not working" "Variable should not exist"
         local ++tests_failed
     }
-}
-
 //========================================================
 // TEST 007: replace Option
 //========================================================
@@ -206,8 +200,6 @@ cap noisily {
     }
     else {
         test_fail "TEST 007" "replace option" "replace not forcing recomputation" `"`cmd_line_replace'"'
-    else {
-        test_fail "TEST 007: replace option not forcing recomputation" ""
         local ++tests_failed
     }
     
@@ -235,10 +227,6 @@ cap noisily {
     }
     else {
         test_fail "TEST 008" "keepall option" "keepall option failed" `"`cmd_line'"'
-        local ++tests_passed
-    }
-    else {
-        test_fail "TEST 008: keepall option failed" ""
         local ++tests_failed
     }
 }
@@ -262,17 +250,16 @@ cap noisily {
     }
     else {
         test_fail "TEST 009" "Hash consistency" "Hash 1: `hash_1', Hash 2: `hash_2'" `"`cmd_line'"'
-        local ++tests_passed
-    }
-    else {
-        test_fail "TEST 009: Hash inconsistency" "Hash 1: `hash_1', Hash 2: `hash_2'"
         local ++tests_failed
     }
 }
 
 //========================================================
 // TEST 010: Different Commands Different Hash
-//==local cmd_line_1 `"cacheit, dir("`test_dir'"): regress price weight"'
+//========================================================
+cap noisily {
+    sysuse auto, clear
+    local cmd_line_1 `"cacheit, dir("`test_dir'"): regress price weight"'
     cap `cmd_line_1'
     local hash_1 = r(call_hash)
     
@@ -288,11 +275,6 @@ cap noisily {
     }
     else {
         test_fail "TEST 010" "Hash collision" "Both commands produced same hash: `hash_1'" `"`cmd_line_1'"'
-        test_pass "TEST 010: Different commands have different hashes"
-        local ++tests_passed
-    }
-    else {
-        test_fail "TEST 010: Hash collision detected" "Both hashes: `hash_1'"
         local ++tests_failed
     }
 }
@@ -301,10 +283,10 @@ cap noisily {
 // SUMMARY
 //========================================================
 cleanup_cache "`test_dir'"
-global cache_dir ""
+disp _newline `"{result:Core Tests: `tests_passed' passed, `tests_failed' failed (out of `total')}"' _newline
 
 local total = `tests_passed' + `tests_failed'
-disp _newline "{result:Core Tests: `tests_passed' passed, `tests_failed' failed (out of `total'))}" _newline
+disp _newline `"{result:Core Tests: `tests_passed' passed, `tests_failed' failed (out of `total')}"' _newline
 
 if `tests_failed' > 0 {
     exit 1

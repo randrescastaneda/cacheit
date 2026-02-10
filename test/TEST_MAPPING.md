@@ -13,36 +13,6 @@ This document maps all identified bugs to specific tests that detect them, along
 **Location**: `cacheit.ado`, lines 557-574
 
 **Problem Code**:
-```stata
-local timeroff = 1    // ← WRONG: should be timernum
-forvalues i = 1/100 {
-    if mi(scalar(r(nt`i'))) {
-        local timernum = `i'
-        local timeoff = 0   // ← WRONG: should be timeroff
-        continue , break
-    }
-}
-```
-
-**Impact**:
-- Variable `timeroff` set but never used
-- If all 100 timers in use, `timernum` remains unset
-- Code fails at line 587 when trying to use undefined `timernum`
-
-**Detecting Tests**:
-- ✓ `BUG-001` in `test_units_bugs.do` - Timer allocation with high count
-
-**Test Verification**:
-```stata
-// BUG-001 test creates timers up to 95, then tries cacheit
-forvalues i = 1/95 {
-    qui timer on `i'
-    qui timer off `i'
-}
-cap noisily cacheit, dir("`test_dir'"): regress price weight
-// Should succeed (or handle gracefully, not crash)
-```
-
 ---
 
 ### Critical Bug #2: Log File Handle Leak (Line 594)

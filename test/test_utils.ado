@@ -49,11 +49,13 @@ cap program drop assert_file_exists
 program define assert_file_exists
     args filepath message
     
-    mata: if (!fileexists("`filepath'")) {
-        st_local("exists", "0")
-    }
-    else {
-        st_local("exists", "1")
+    mata {
+        if (!fileexists(st_local("filepath"))) {
+            st_local("exists", "0")
+        }
+        else {
+            st_local("exists", "1")
+        }
     }
     
     if "`exists'" == "0" {
@@ -140,7 +142,7 @@ program define cleanup_cache
     mata: st_local("direxists", strofreal(direxists("`cache_dir'")))
 
     if ("`direxists'" == "1") {
-        noi cacheit clean, dir("`cache_dir'")
+        noi cacheit clean, dir("`cache_dir'") force
     }
 
 end

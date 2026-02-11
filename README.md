@@ -50,8 +50,10 @@ and options are:
 + nodata: If `nodata` is specified, cacheit will save all command returns, but will not save data if any changes in data are detected.  
 + datacheck(string): Allows for data on disk to be checked to ensure command uniqueness.
 + framecheck(string): Allows for additional frames to be checked to ensure command uniqueness.
++ seed(numlist integer >0 max=1): Seeds the random-number generator (RNG) for cache key generation, ensuring commands with randomness (bootstrap, simulate, random splits) produce distinct caches for different seed values. This option is useful when you want different RNG initializations to result in separate cached results.
 + clear: Allows command implementation to proceed even if this would unsaved changes in data (similar, for example, to `use, clear`)
-+ hidden: Instead of returning hidden elements as visible stored results re-hides any hidden elements.
++ hidden: Instead of returning hidden elements as visible stored results re-hides any hidden elements. 
++ hidden_dir: Use a hidden cache subdirectory named `.cache` in the current working directory, overriding any `dir()` option or `cache_dir` global setting.
 + replace: Forces cacheit to re-run the command and re-cache results, even if a previously cached version of command output has been found.  Such an example may be useful if commands are re-issued and command behaviour has changed.
 + keepall: Indicates that elements stored by previous commands in e(return) and s(return) lists should not be cleared prior to invoking the command requested with cacheit, allowing for their future use.
 
@@ -380,6 +382,7 @@ Standard cache behaviour can also be controlled by using a number of global vari
 | Global name | Value | Description |
 | ----------- | ----- | ----------- |
 |cache_replace | replace| Automatically activates the replace option, overwriting the cache each time.|
+|cache_keepall | keepall | Automatically activates the keepall option, preserving previous return lists. |
 |cache_on      | off   | Bypasses caching entirely (effectively ignoring the _cacheit:_ prefix if present). |
 |cache_prefix  | string | Define a prefix for saving cached contents, overriding the default *_ch* used in the prefix option with any *string* defined by the user. |
 |cache_dir | dir_name | Define a default location for saving cached contents, overriding the default  *_cache* directory with any *dir_name* defined by the user. |

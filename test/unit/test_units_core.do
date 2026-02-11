@@ -89,26 +89,39 @@ pause_test "CORE-004" "Return list preservation"
 sysuse auto, clear
 
 local cmd_line `"cacheit, dir("`test_dir'"): summ price"'
-capture `cmd_line'
-local mean_first = r(mean)
-local sd_first = r(sd)
-local N_first = r(N)
-
-return clear
-
-capture `cmd_line'
-local mean_second = r(mean)
-local sd_second = r(sd)
-local N_second = r(N)
-
-if abs(`mean_first' - `mean_second') < `tolerance' & ///
-   abs(`sd_first' - `sd_second') < `tolerance' & ///
-   `N_first' == `N_second' {
-    append_test_result, test_id("CORE-004") status("pass") description("Return list preservation") command("`cmd_line'")
+cap `cmd_line'
+if (_rc != 0) {
+    append_test_result, test_id("CORE-004") status("fail") description("Return list preservation") assertion_msg("Initial command failed: Error code `rc'") command("`cmd_line'")
+    
 }
 else {
-    append_test_result, test_id("CORE-004") status("fail") description("Return list preservation") assertion_msg("mean/sd/N mismatch") command("`cmd_line'")
-}
+    local mean_first = r(mean)
+    local sd_first = r(sd)
+    local N_first = r(N)
+    
+    // Clear return list
+    return clear
+    
+    // Second run - should load from cache and preserve return list
+    cap `cmd_line'
+    if (_rc != 0) {
+        append_test_result, test_id("CORE-004") status("fail") description("Return list preservation") assertion_msg("Second command failed: Error code `rc'") command("`cmd_line'")
+        
+    }
+    else { // assessmetn
+        local mean_second = r(mean)
+        local sd_second = r(sd)
+        local N_second = r(N)
+        if abs(`mean_first' - `mean_second') < `tolerance' & ///
+                abs(`sd_first' - `sd_second') < `tolerance' & ///
+                `N_first' == `N_second' {
+                append_test_result, test_id("CORE-004") status("pass") description("Return list preservation") command("`cmd_line'")
+                }
+        else {
+            append_test_result, test_id("CORE-004") status("fail") description("Return list preservation") assertion_msg("mean/sd/N mismatch") command("`cmd_line'")
+        }
+    } // end of assessmetn
+} // end of first else
 
 //========================================================
 // TEST 005: ereturn Matrices

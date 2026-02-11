@@ -198,4 +198,4 @@ end
 
 /* End of run_tests.ado */
 
-*! version 0.0.2
+*! version 0.0.3

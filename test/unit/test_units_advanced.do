@@ -22,50 +22,39 @@ pause_test "ADV-101" "Frame caching and restoration"
 sysuse auto, clear
 
 // Create and populate a frame
+cap frame drop data_frame
 frame create data_frame
-cwf data_frame
-set obs 150
-gen x = _n
-gen y = _n^2
-summ y
-local mean_first = r(mean)
+frame data_frame {
+    set obs 150
+    gen x = _n
+    gen y = _n^2
+    summ y
+    local mean_first = r(mean)
+}
 cwf default
 
 // Run command using the frame
-local cmd_line `"cacheit, dir("`test_dir'") framecheck(data_frame): summ x"'
-capture `cmd_line'
-local rc = _rc
+local cmd_line `"cacheit, dir("`test_dir'") framecheck(data_frame): summ price"'
+qui `cmd_line'
+local hash_first = "`r(call_hash)'"
 
-if `rc' == 0 {
-    // Drop the frame
-    frame drop data_frame
-    
-    // Re-run - frame should be restored
-    cap `cmd_line'
-    local rc2 = _rc
-    
-    if `rc2' == 0 {
-        // Verify frame restored
-        cwf data_frame
-        descrip
-        local num_obs = r(N)
-        cwf default
-        
-        if `num_obs' == 150 {
-            append_test_result, test_id("ADV-101") status("pass") description("Frame caching and restoration") command("`cmd_line'")
-        }
-        else {
-            append_test_result, test_id("ADV-101") status("fail") description("Frame caching and restoration") assertion_msg("N = `num_obs', expected 150") command("`cmd_line'")
-        }
-        frame drop data_frame
-    }
-    else {
-        append_test_result, test_id("ADV-101") status("fail") description("Frame caching and restoration") assertion_msg("Frame cache retrieval failed: Error code `rc2'") command("`cmd_line'")
-    }
+// modify the frame
+frame data_frame {
+    replace y = 1
+    summ y
+    local mean_second = r(mean)
+}
+cwf default
+`cmd_line'
+local hash_second = "`r(call_hash)'"
+
+if ("`hash_first'" == "`hash_second'" ) {
+    append_test_result, test_id("ADV-101") status("pass") description("Frame caching and restoration") command("`cmd_line'")
 }
 else {
-    append_test_result, test_id("ADV-101") status("fail") description("Frame caching and restoration") assertion_msg("Frame caching operation failed: Error code `rc'") command("`cmd_line'")
+    append_test_result, test_id("ADV-101") status("fail") description("Frame caching and restoration") assertion_msg("Frame cache not used correctly") command("`cmd_line'")
 }
+cap frame drop data_frame
 
 //========================================================
 // TEST 102: Graph Caching

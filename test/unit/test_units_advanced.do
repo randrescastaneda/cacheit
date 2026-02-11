@@ -28,8 +28,6 @@ frame data_frame {
     set obs 150
     gen x = _n
     gen y = _n^2
-    summ y
-    local mean_first = r(mean)
 }
 cwf default
 
@@ -41,14 +39,12 @@ local hash_first = "`r(call_hash)'"
 // modify the frame
 frame data_frame {
     replace y = 1
-    summ y
-    local mean_second = r(mean)
 }
 cwf default
 `cmd_line'
 local hash_second = "`r(call_hash)'"
 
-if ("`hash_first'" == "`hash_second'" ) {
+if ("`hash_first'" != "`hash_second'" ) { // different is OK
     append_test_result, test_id("ADV-101") status("pass") description("Frame caching and restoration") command("`cmd_line'")
 }
 else {

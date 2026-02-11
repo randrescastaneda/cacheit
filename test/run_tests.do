@@ -1,71 +1,88 @@
 /*==================================================
 Master Test Runner for cacheit Package
-Author:        Testing Framework
-E-mail:        testing@cacheit.org
 ----------------------------------------------------
 Creation Date:     February 2026
 Purpose:           Runs all test suites and generates report
 ==================================================*/
 
-/*
-USAGE:
-    From cacheit/test directory:
-    do run_tests.do
-    
-    Or with options:
-    do run_tests.do, bugs core advanced integration
-*/
-
 version 16.1
 clear all
-discard // very important for changes in the cacheit package
+cls
+discard
 set more off
 
 disp _newline "{title:CACHEIT TEST SUITE RUNNER}" _newline
 
-// Parse arguments
-local test_suites "bugs core advanced"
-
-if ("`c(username)'" == "wb384996") {
-    local test_root "C:\Users\wb384996\OneDrive - WBG\ado\myados\cacheit\test"
-}
-
-capture cd "`test_root'"
-
-if _rc != 0 {
-    disp "{err:ERROR: Could not navigate to test directory}"
-    disp "{err:`test_root'}"
-    exit 1
-}
+// Initialize tracking
+local overall_rc = 0
+local suite_count = 0
 
 //========================================================
 // RUN BUG-SPECIFIC TESTS
 //========================================================
-if strpos("`test_suites'", "bugs") > 0 {
-    cap {
-        do unit/test_units_bugs.do
-    }
+disp _newline "{title:Running BUG tests...}" _newline
+cap noisily do test/unit/test_units_bugs.do
+local rc_bugs = _rc
+
+if `rc_bugs' == 0 {
+    disp _newline "{result:✓ BUG TESTS PASSED}" _newline
+    local ++suite_count
+}
+else {
+    local overall_rc = 1
+    disp _newline "{err:✗ BUG TESTS FAILED}" _newline
+    local ++suite_count
 }
 
 //========================================================
 // RUN CORE FUNCTIONALITY TESTS
 //========================================================
-if strpos("`test_suites'", "core") > 0 {
-    cap {
-        do unit/test_units_core.do
-    }
+disp _newline "{title:Running CORE tests...}" _newline
+cap noisily do test/unit/test_units_core.do
+local rc_core = _rc
+
+if `rc_core' == 0 {
+    disp _newline "{result:✓ CORE TESTS PASSED}" _newline
+    local ++suite_count
+}
+else {
+    local overall_rc = 1
+    disp _newline "{err:✗ CORE TESTS FAILED}" _newline
+    local ++suite_count
 }
 
 //========================================================
 // RUN ADVANCED FEATURE TESTS
 //========================================================
-if strpos("`test_suites'", "advanced") > 0 {
-    cap {
-        do unit/test_units_advanced.do
-    }
+disp _newline "{title:Running ADVANCED tests...}" _newline
+cap noisily do test/unit/test_units_advanced.do
+local rc_advanced = _rc
+
+if `rc_advanced' == 0 {
+    disp _newline "{result:✓ ADVANCED TESTS PASSED}" _newline
+    local ++suite_count
+}
+else {
+    local overall_rc = 1
+    disp _newline "{err:✗ ADVANCED TESTS FAILED}" _newline
+    local ++suite_count
 }
 
-disp _newline "{result:Tests completed." _newline
+//========================================================
+// FINAL SUMMARY
+//========================================================
+disp _newline "{hline 70}"
+disp "{bf:MASTER TEST SUMMARY}"
+disp "{hline 70}"
+disp "Test suites run: `suite_count'"
 
-exit
+if `overall_rc' == 0 {
+    disp _newline "{result:✓ SUCCESS: All test suites completed successfully.}" _newline
+    exit 0
+}
+else {
+    disp _newline "{err:✗ FAILURE: Some test suites had failures.}" _newline
+    noi print_test_summary
+}
+
 /* End of test runner */

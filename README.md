@@ -50,8 +50,7 @@ and options are:
 + nodata: If `nodata` is specified, cacheit will save all command returns, but will not save data if any changes in data are detected.  
 + datacheck(string): Allows for data on disk to be checked to ensure command uniqueness.
 + framecheck(string): Allows for additional frames to be checked to ensure command uniqueness.
-+ external_api(string): When using commands that retrieve data from external APIs, pass a unique identifier (e.g., version number, timestamp, API response hash) to incorporate into the cache key so that different API states produce distinct caches.
-+ rngcache: By default, the random-number generator (RNG) state is ignored when constructing the cache key. Specify `rngcache` to include the current RNG state in the cache key, ensuring commands with randomness (bootstrap, simulate, random splits) produce distinct caches for different RNG states.
++ seed(numlist integer >0 max=1): Seeds the random-number generator (RNG) for cache key generation, ensuring commands with randomness (bootstrap, simulate, random splits) produce distinct caches for different seed values. This option is useful when you want different RNG initializations to result in separate cached results.
 + clear: Allows command implementation to proceed even if this would unsaved changes in data (similar, for example, to `use, clear`)
 + hidden: Instead of returning hidden elements as visible stored results re-hides any hidden elements. 
 + hidden_dir: Use a hidden cache subdirectory named `.cache` in the current working directory, overriding any `dir()` option or `cache_dir` global setting.

@@ -188,6 +188,8 @@ program define run_tests, rclass
     return scalar rc = `overall_rc'
     
     // Only exit in batch mode (allows frame inspection in interactive mode)
+
+    noi disp "type {cmd:  cwf __cacheit_test_results}"
     if c(mode) == "batch" {
         exit `overall_rc'
     }

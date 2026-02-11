@@ -11,6 +11,15 @@ version 16.1
 // Setup test environment
 local test_dir = c(tmpdir) + "cacheit_core_tests_`=subinstr("`c(current_time)'", ":", "", .)'"
 cap mkdir "`test_dir'"
+if (_rc != 0) {
+    if (_rc == 693) {
+        exit 693
+    }
+    else {
+        disp "{err:ERROR: Could not create test directory: `test_dir'}"
+        exit 198
+    }
+}
 global cache_dir "`test_dir'"
 local tolerance = 1e-8
 
@@ -112,13 +121,17 @@ else {
         local mean_second = r(mean)
         local sd_second = r(sd)
         local N_second = r(N)
-        if abs(`mean_first' - `mean_second') < `tolerance' & ///
-                abs(`sd_first' - `sd_second') < `tolerance' & ///
+
+        local diff_mean = abs(`mean_first' - `mean_second')
+        local diff_sd = abs(`sd_first' - `sd_second')
+        
+        if `diff_mean' < `tolerance' & ///
+                `diff_sd' < `tolerance' & ///
                 `N_first' == `N_second' {
                 append_test_result, test_id("CORE-004") status("pass") description("Return list preservation") command("`cmd_line'")
                 }
         else {
-            append_test_result, test_id("CORE-004") status("fail") description("Return list preservation") assertion_msg("mean/sd/N mismatch") command("`cmd_line'")
+            append_test_result, test_id("CORE-004") status("fail") description("Return list preservation. Tolerance: `tolerance'") assertion_msg("mean diff: `diff_mean', sd diff: `diff_sd'") command("`cmd_line'")
         }
     } // end of assessmetn
 } // end of first else
@@ -155,7 +168,10 @@ pause_test "CORE-006" "nodata option"
 sysuse auto, clear
 local orig_obs = _N
 local cmd_line `"cacheit, dir("`test_dir'") nodata: generate test_var = price * 2"'
-capture `cmd_line'
+qui `cmd_line'
+
+sysuse auto, clear
+qui `cmd_line'
 
 // Check that variable wasn't created on reload
 cap describe test_var

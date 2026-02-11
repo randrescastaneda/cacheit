@@ -189,7 +189,9 @@ program define run_tests, rclass
     
     // Only exit in batch mode (allows frame inspection in interactive mode)
 
-    noi disp "type {cmd:  cwf __cacheit_test_results}"
+    noi disp "Clik {stata cwf __cacheit_test_results:here} to view test results frame." _n ///
+    `"then type {cmd: br if status=="fail"} to see failed tests."'
+
     if c(mode) == "batch" {
         exit `overall_rc'
     }

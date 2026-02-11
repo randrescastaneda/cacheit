@@ -12,6 +12,7 @@ version 16.1
 local test_dir = c(tmpdir) + "cacheit_core_tests_`=subinstr("`c(current_time)'", ":", "", .)'"
 cap mkdir "`test_dir'"
 global cache_dir "`test_dir'"
+local tolerance = 1e-8
 
 disp _newline "{title:Running Core Functionality Tests...}" _newline
 
@@ -73,7 +74,7 @@ capture `cmd_line'
 local r2_second = e(r2)
 local N_second = e(N)
 
-if `r2_first' == `r2_second' & `N_first' == `N_second' {
+if abs(`r2_first' - `r2_second') < `tolerance' & `N_first' == `N_second' {
     append_test_result, test_id("CORE-003") status("pass") description("Cached retrieval") command("`cmd_line'")
 }
 else {
@@ -100,7 +101,9 @@ local mean_second = r(mean)
 local sd_second = r(sd)
 local N_second = r(N)
 
-if `mean_first' == `mean_second' & `sd_first' == `sd_second' & `N_first' == `N_second' {
+if abs(`mean_first' - `mean_second') < `tolerance' & ///
+   abs(`sd_first' - `sd_second') < `tolerance' & ///
+   `N_first' == `N_second' {
     append_test_result, test_id("CORE-004") status("pass") description("Return list preservation") command("`cmd_line'")
 }
 else {

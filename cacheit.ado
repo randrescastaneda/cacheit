@@ -683,7 +683,7 @@ program define cacheit, rclass properties(prefix)
 
 			qui gen item = ""
 			if regexm("`element'", "scalar")==1 {
-				qui gen contents = .
+				qui gen double contents = .
 			}
 			else {
 				qui gen contents = ""

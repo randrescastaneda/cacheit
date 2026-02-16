@@ -11,6 +11,11 @@ Modification Date:  12 Dec 2024 - 02:06:41
 Do-file version:    0.0.0.9000
 ==================================================*/
 
+*CHANGES NEEDED:
+* check datasignature thing
+* timer
+
+
 /*==================================================
 0: Program set up
 ==================================================*/
@@ -20,9 +25,14 @@ program define cacheit, rclass properties(prefix)
 	//========================================================
 	//  Parse for single command clean or list
 	//========================================================
-	if regexm("`0'", "^clean") {
+	if regexm(`"`0'"', "^clean") {
 		// Unpack locations for cleaning
-		syntax [anything(name=subcmd)], [dir(string) project(string) *]
+		syntax [anything(name=subcmd)], [dir(string) project(string) hidden_dir hidden force]
+
+		// If hidden_dir is set, override dir to use .cache in current working directory
+		if ("`hidden_dir'" != "" | "`hidden'" != "") {
+			local dir ".cache"
+		}
 
 		if ("`dir'" == "") {
 			qui cacheit_setdir
@@ -33,14 +43,19 @@ program define cacheit, rclass properties(prefix)
 		}
 
 		//clean cache
-		cacheit_clean clean, dir("`dir'") 
+		cacheit_clean clean, dir("`dir'") `force'
 		exit
 	}
-	if regexm("`0'", "^list") {
+	if regexm(`"`0'"', "^list") {
 		//"listing cache"
 		
 		// Unpack locations for list file
-		syntax [anything(name=subcmd)], [dir(string) project(string) *]
+		syntax [anything(name=subcmd)], [dir(string) project(string) hidden_dir hidden]
+
+		// If hidden_dir is set, override dir to use .cache in current working directory
+		if ("`hidden_dir'" != "" | "`hidden'" != "") {
+			local dir ".cache"
+		}
 
 		if ("`dir'" == "") {
 			qui cacheit_setdir
@@ -86,15 +101,20 @@ program define cacheit, rclass properties(prefix)
 		dir(string)              ///  
 		project(string)          ///  
 		prefix(string)           /// 
+		external_api(string)     /// 
 		noDATA                   /// 
 		datacheck(string)        ///  
 		framecheck(string)       /// 
+		rngcache                 ///
+	    seed(numlist integer >0 max=1)	///
 		pause                    ///
 		KEEPall                  ///  does not clear previous returns  
+		hidden_dir               ///  works with .cache directory
 		hidden                   ///  keeps hidden returns hidden
 		clear                    ///  
 		replace                  ///  replace says to re-run even if the cache is there
-	] 
+		force					///  force cleans without asking
+	]
 
 	//========================================================
 	//  Permitting global control
@@ -102,6 +122,10 @@ program define cacheit, rclass properties(prefix)
 	if ("${cache_replace}" == "replace" & "`replace'" == "") {
 		dis "{result: Note:}{text: cache is set to replace previously cached files via the {res:{it:cache_replace}} global.}"
 		local replace replace
+	}
+	if ("${cache_keepall}" == "keepall" & "`keepall'" == "") {
+		dis "{result: Note:}{text: cache is set to keep all return lists in memory, setting keepall by default.}"
+		local keepall keepall
 	}
 	if ("${cache_on}"=="off") {
 		dis "{result: Note:}{text: cache is bypassed given that global {res:{it:cache_on}} is set to {res:{ul:off}}.}"
@@ -124,11 +148,20 @@ program define cacheit, rclass properties(prefix)
 	//========================================================
 	// Set up and defenses
 	//========================================================
+	if `"`seed'"' != "" {
+		set seed `seed'
+	}
+	local rstate = c(rngstate)
 
 	* pause
 	if ("`pause'" == "pause") pause on
 	else                      pause off
 	set checksum off
+
+	// If hidden_dir is set, override dir to use .cache in current working directory
+	if ("`hidden_dir'" != "") {
+		local dir ".cache"
+	}
 
 	// Set dir if not selected by user
 	if ("`dir'" == "") {
@@ -159,7 +192,7 @@ program define cacheit, rclass properties(prefix)
 	//========================================================
 
 	// hash command --------------------------
-	cacheit_hash get,  cmd_call("`right'")
+	cacheit_hash get,  cmd_call(`"`right'"')
 	local cmd_hash = "`r(chhash)'"
 	return local cmd_hash = "`cmd_hash'"
 
@@ -211,10 +244,17 @@ program define cacheit, rclass properties(prefix)
 	}
 
 	//  combine both parts --------------------------
-	cacheit_hash get,  cmd_call("`cmd_hash'`datasignature'") prefix("`prefix'")
-	local call_hash = "`r(chhash)'"
-	return local call_hash = "`call_hash'"
-
+	if ("`rngcache'" != "") {
+		// get seed and state
+		cacheit_hash get,  cmd_call("`rstate'`cmd_hash'`datasignature'`external_api'") prefix("`prefix'")
+		local call_hash = "`r(chhash)'"
+		return local call_hash = "`call_hash'"
+	}
+	else {
+		cacheit_hash get,  cmd_call("`cmd_hash'`datasignature'`external_api'") prefix("`prefix'")
+		local call_hash = "`r(chhash)'"
+		return local call_hash = "`call_hash'"
+	}
 	//========================================================
 	// Find cache files and load
 	//========================================================
@@ -254,7 +294,7 @@ program define cacheit, rclass properties(prefix)
 		qui count
 		local rnmax=r(N)
 		local matchedCommand = contents[`rnmax']
-		if "`matchedCommand'" != "`right'" {
+		if ustrcompare(`"`matchedCommand'"', `"`right'"') != 0 {
 			dis "{err: Hash collision detected.}"
 			dis "{err: This is a very rare occurrence in which an identical hash has coincidentally been generated for two distinct strings.}"
 			dis "{err: You typed `matchedCommand'.}"
@@ -519,20 +559,34 @@ program define cacheit, rclass properties(prefix)
 	if "`keepall'"=="" ereturn clear
 	if "`keepall'"=="" sreturn clear
 
+	// Get timer for command time
+	qui timer list  
+	local timeroff = 1
+	forvalues i =  1/100  {
+    	if mi(scalar(r(nt`i'))) {
+			local timernum = `i'
+			local timeroff = 0  //  'timeoff', now matches variable name
+        	continue , break
+	    }
+	}
+
 	//Log output and then this can be printed when cached command called
 	tempname logfile
+	cap log close `logfile'
 	qui log using "`dir'/`call_hash'", name(`logfile') replace
 
 	//Write current command to cache log for future reference if consulted
 	qui file open cachedcommands using "`dir'/cached_commands.txt", write append
-	file write cachedcommands _n `". {cmd:`right'}"'  _n
+	file write cachedcommands _n `". {cmd:	`right'}"'  _n
  	file close cachedcommands 
 
 
 	// Will log for return list, ereturn list and sreturn list to check for hidden returns
 	if "`hidden'"!="" qui log using "`dir'/rlist.txt", name(rlog) text replace
 	* Now, run the command on the right
+	qui: timer on `timernum'
 	capture noisily `right'
+	qui timer off `timernum'
 	if "`hidden'"!="" {
 		dis ""
 		dis "The following elements will be returned as visible"
@@ -549,10 +603,15 @@ program define cacheit, rclass properties(prefix)
 		`right' `clear'
 	}
 	else if _rc!=0 {
-		qui log close `logfile'	
-		exit
+		local orig_rc = _rc
+		qui log close `logfile'
+		if "`hidden'"!="" qui log close rlog  //close rlog on error
+		cap frame drop `hashcheck'  //clean frames on error
+		cap frame drop `elements'
+		exit `orig_rc'
 	}
-
+	qui timer list
+	local commandtime = r(t`timernum')
 	local dtasave   = 0
 
 	// ret list --------------
@@ -624,7 +683,7 @@ program define cacheit, rclass properties(prefix)
 
 			qui gen item = ""
 			if regexm("`element'", "scalar")==1 {
-				qui gen contents = .
+				qui gen double contents = .
 			}
 			else {
 				qui gen contents = ""
@@ -662,18 +721,18 @@ program define cacheit, rclass properties(prefix)
 		local rn1 = r(N)+1
 		qui set obs `rn1'
 		qui replace item = "cached_command" in `rn1'
-		qui replace contents = "`right'" in `rn1'
+		qui replace contents = `"`right'"' in `rn1'
 	}
 	else {
 		qui set obs 1
 		qui gen item = "cached_command"
-		qui gen contents = "`right'"
+		qui gen contents = `"`right'"'
 	}
 	qui save "`dir'/`call_hash'_r_macros.dta", replace
 	cwf `origframe'
 
 	foreach n in scalars macros matrices {
-		frame drop ``n'_results'
+		cap frame drop ``n'_results'  // use cap to handle errors
 	}
 	qui log close `logfile'
 	if `newhide'==1 {
@@ -818,7 +877,7 @@ end
 cap program drop cacheit_setdir
 program define cacheit_setdir, rclass
 	mata {
-			// Check if global macro exiss. If it does, 
+			// Check if global macro exists. If it does, 
 			// use it as cachedir. Otherwise, use pwd()
 			if (st_global("cache_dir") != "") {
 				cachedir = st_global("cache_dir") + "/_cache"

@@ -11,10 +11,6 @@ Modification Date:  12 Dec 2024 - 02:06:41
 Do-file version:    0.0.0.9000
 ==================================================*/
 
-*CHANGES NEEDED:
-* check datasignature thing
-* timer
-
 
 /*==================================================
 0: Program set up
@@ -31,7 +27,12 @@ program define cacheit, rclass properties(prefix)
 
 		// If hidden_dir is set, override dir to use .cache in current working directory
 		if "`hidden_dir'" != "" {
-			local dir ".cache"
+ 			qui cacheit_setdir, hiddendir
+			local dir = "`r(dir)'"
+		}
+		else if "`dir'"!="" {
+ 			qui cacheit_setdir, dir("`dir'")
+			local dir = "`r(dir)'"
 		}
 
 		if ("`dir'" == "") {
@@ -54,11 +55,15 @@ program define cacheit, rclass properties(prefix)
 
 		// If hidden_dir is set, override dir to use .cache in current working directory
 		if "`hidden_dir'" != "" {
-			local dir ".cache"
+ 			qui cacheit_setdir, hiddendir
+			local dir = "`r(dir)'"
 		}
-
+		else if "`dir'"!="" {
+ 			qui cacheit_setdir, dir("`dir'")
+			local dir = "`r(dir)'"
+		}
 		if ("`dir'" == "") {
-			qui cacheit_setdir
+ 			qui cacheit_setdir
 			local dir = "`r(dir)'"
 		}
 		if ("`project'" != "") {
@@ -136,7 +141,7 @@ program define cacheit, rclass properties(prefix)
 		dis "{result: Note:}{text: cache prefix is set via the {res:{it:cache_prefix}} global.}"
 		local prefix: copy global cache_prefix
 	}
-	if (length("${cache_dir}") > 0 & "`dir'" == "") {
+	if (length("${cache_dir}") > 0 & "`dir'" == ""  & "`hidden_dir'" == "" ) {
 		dis "{result: Note:}{text: cache directory is set via the {res:{it:cache_dir}} global.}"
 		local dir: copy global cache_dir
 	}
@@ -159,22 +164,20 @@ program define cacheit, rclass properties(prefix)
 	set checksum off
 
 	// If hidden_dir is set, override dir to use .cache in current working directory
-	if ("`hidden_dir'" != "") {
-		local dir ".cache"
-	}
-
-	// Set dir if not selected by user
-	if ("`dir'" == "") {
-		qui cacheit_setdir
+	if "`hidden_dir'" != "" {
+		cacheit_setdir, hiddendir
 		local dir = "`r(dir)'"
 	}
-	else {
-		mata : st_numscalar("direxists", direxists("`dir'"))
-		if direxists==0 {
-			dis "The cache directory does not exist."
-			exit 693
-		}
+	else if "`dir'"!="" {
+		cacheit_setdir, dir("`dir'")
+		local dir = "`r(dir)'"
 	}
+	// If dir is not set, use default, _cache
+	if ("`dir'" == "") {
+		cacheit_setdir
+		local dir = "`r(dir)'"
+	}
+
 
 	if ("`project'" != "") {
 		local dir = "`dir'/`project'"
@@ -876,15 +879,23 @@ end
 // set directory
 cap program drop cacheit_setdir
 program define cacheit_setdir, rclass
-	mata {
+	syntax [anything], [dir(string) hiddendir]
+    mata {
 			// Check if global macro exists. If it does, 
 			// use it as cachedir. Otherwise, use pwd()
-			if (st_global("cache_dir") != "") {
-				cachedir = st_global("cache_dir") + "/_cache"
+			if (st_local("hiddendir") != "") {
+				cachedir = pwd() + ".cache"
+			}
+			else if (st_local("dir") != "") {
+				cachedir = st_local("dir")
+			}
+			else if (st_global("cache_dir") != "") {
+				cachedir = st_global("cache_dir") 
 			}
 			else {
 				cachedir = pwd() + "_cache"
 			}
+
 			if (!direxists(cachedir)) {
 				mkdir(cachedir)
 				fh = fopen(cachedir+"/cached_commands.txt", "w")

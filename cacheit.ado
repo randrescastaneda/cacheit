@@ -30,7 +30,7 @@ program define cacheit, rclass properties(prefix)
 		syntax [anything(name=subcmd)], [dir(string) project(string) hidden_dir hidden force]
 
 		// If hidden_dir is set, override dir to use .cache in current working directory
-		if ("`hidden_dir'" != "" | "`hidden'" != "") {
+		if "`hidden_dir'" != "" {
 			local dir ".cache"
 		}
 
@@ -53,7 +53,7 @@ program define cacheit, rclass properties(prefix)
 		syntax [anything(name=subcmd)], [dir(string) project(string) hidden_dir hidden]
 
 		// If hidden_dir is set, override dir to use .cache in current working directory
-		if ("`hidden_dir'" != "" | "`hidden'" != "") {
+		if "`hidden_dir'" != "" {
 			local dir ".cache"
 		}
 

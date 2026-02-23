@@ -1023,3 +1023,15 @@ Version Control:
 *! -- `cache` has changed to `cacheit` 
 *! --    New repo --> https://github.com/randrescastaneda/cacheit
 *! --    Old repo --> still available--but archived--in https://github.com/randrescastaneda/cache
+*! version 0.0.4  <2026feb23>
+*! Add improvements suggested by SJ reviewers.
+*! Comprehensive Test Suite - Added 25+ unit tests covering core, advanced, and bug-specific scenarios
+*! Frame Support - Enhanced frame caching and restoration
+*! Graph Caching - Improved support for caching scatter plots and graphs
+*! Bug Fixes:
+*!   - Fixed timer loop variable typo
+*!   - Fixed directory generation issues
+*!   - Fixed condition for hidden_dir option
+*!   - Changed contents variable type to double for scalars
+*! Better Messaging - Added informative output and explanations to testing
+

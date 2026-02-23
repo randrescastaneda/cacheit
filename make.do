@@ -8,17 +8,24 @@
 cap program drop getfiles
 program define getfiles, rclass
 
-args mask
+    args mask excl
 
-local f2add: dir . files "`mask'", respectcase
+    local f2add: dir . files "`mask'", respectcase
 
-foreach a of local f2add {
-	local as "`as' `a'"
-}
-local as = trim("`as'")
-local as: subinstr local as " " ";", all
+    foreach a of local f2add {
+        local as "`as' `a'"
+    }
+    local as = trim("`as'")
 
-return local files = "`as'"
+    // exclude files
+    if ("`excl'" != "") {
+        local as: list as - excl
+    }
+
+    local as: subinstr local as " " ";", all
+
+    return local files = "`as'"
+
 end
 
 if ("`c(username)'" == "wb384996") {
@@ -28,8 +35,10 @@ else {
     // Damian, add your path here.. 
 }
 
-getfiles "*.ado"
+getfiles "*.ado" "run_tests.ado"
 local as = "`r(files)'"
+disp `"`as'"'
+
 
 getfiles "*.sthlp"
 local hs = "`r(files)'"
@@ -50,7 +59,7 @@ disp "`toins'"
 
 
 make cacheit, replace toc pkg                                  ///  readme
-	version(0.0.3)                                   ///
+	version(0.0.4)                                   ///
     license("MIT")                                         ///
    author(`""R.Andres Castaneda" "Damian Clarke""')                       ///
     affiliation(`" "The World Bank" "University of Chile & University of Exeter""')                                                         ///
